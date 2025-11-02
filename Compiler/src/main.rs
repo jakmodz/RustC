@@ -8,7 +8,6 @@ use ast::parser_error::ParserError;
 use codegen::asm_generator;
 use lex::error::LexerError;
 use codegen::ast_parser::AsmParser;
-use codegen::asm_generator::*;
 use std::path::Path;
 use std::ffi::OsStr;
 #[derive(Error,Debug)]
@@ -73,14 +72,14 @@ fn run() -> Result<(), CompilerError> {
     let stem = input_path.file_stem().unwrap_or(OsStr::new("output"));
     let parent = input_path.parent().unwrap_or_else(|| Path::new("."));
 
-    // tmp assembly path, e.g. tests/chapter_1/valid/return_2.s
+
     let asm_path = parent.join(format!("{}.s", stem.to_string_lossy()));
 
-    // output executable path, e.g. tests/chapter_1/valid/return_2
+
     let output_path = parent.join(stem);
 
     let file_out = File::create(&asm_path)?;
-    let mut out: Vec<Box<dyn Write>> = vec![
+    let  out: Vec<Box<dyn Write>> = vec![
         Box::new(stdout()),
         Box::new(file_out),
     ];
@@ -98,7 +97,7 @@ fn run() -> Result<(), CompilerError> {
 
     if !status.success() {
         eprintln!("gcc linking failed for {:?}", asm_path);
-        std::process::exit(1);
+        exit(1);
     }
 
     Ok(())

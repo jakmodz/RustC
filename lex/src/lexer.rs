@@ -23,6 +23,11 @@ lazy_static! {
             (Regex::new(r"^\{").unwrap(), TokenType::OpenBrace),
             (Regex::new(r"^\}").unwrap(), TokenType::CloseBrace),
             (Regex::new(r"^\;").unwrap(), TokenType::Semicolon),
+            (Regex::new(r"^\~").unwrap(), TokenType::Tilde),
+            (Regex::new(r"^\-").unwrap(), TokenType::Hypen),
+            (Regex::new(r"^\-\-").unwrap(), TokenType::HypenHypen),
+
+
         ]
     };
     static ref COMMENT: Regex =Regex::new(r"^//[^\n]*\n?").unwrap();
@@ -102,6 +107,15 @@ impl Lexer{
             }
 
             let matched = longest_match.unwrap();
+
+            if matches!(matched.0, TokenType::Constant) {
+                if let Some(next_char) = remaining[matched.1.len()..].chars().next() {
+                    if next_char.is_alphabetic() || next_char == '_' {
+                        return Err(LexerError::InvalidToken(self.line, self.pos + 1, next_char));
+                    }
+                }
+            }
+
             self.pos += matched.1.len();
             tokens.push(Token::create_token(matched.0,matched.1,Span::new(self.pos,self.line)));
             remaining = remaining[matched.1.len()..].to_string();

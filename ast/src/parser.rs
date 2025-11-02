@@ -79,6 +79,9 @@ impl Parser{
     Parse Expression
     */
     fn parse_expression(&mut self)->Result<Expression,ParserError>{
+        if self.pos >= self.tokens.len() {
+            return Err(ParserError::UnexpectedEOF);
+        }
         let current_token = &self.tokens[self.pos];
         self.pos+=1;
         match &current_token{

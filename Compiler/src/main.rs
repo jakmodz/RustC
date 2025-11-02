@@ -61,12 +61,14 @@ fn run() -> Result<(), CompilerError> {
     file.read_to_string(&mut content)?;
 
     // --- 2. Lexing + parsing ---
+
     let mut lex = Lexer::new();
     let tokens = lex.tokenize(content)?;
+    if args.lex { return Ok(()) }
     let mut parser = ast::parser::Parser::new(tokens);
     let ast = parser.parse()?;
     let asm_ast = AsmParser::new().parse(ast);
-
+    if args.parse { return Ok(()) }
     // --- 3. Generate assembly ---
     let input_path = Path::new(&args.path);
     let stem = input_path.file_stem().unwrap_or(OsStr::new("output"));
@@ -94,7 +96,7 @@ fn run() -> Result<(), CompilerError> {
         .arg(&asm_path)
         .status()
         .expect("failed to run gcc");
-
+    if args.codegen { return Ok(()) }
     if !status.success() {
         eprintln!("gcc linking failed for {:?}", asm_path);
         exit(1);

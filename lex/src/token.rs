@@ -24,7 +24,10 @@ pub enum TokenType {
     CloseParen,
     OpenBrace,
     CloseBrace,
-    Semicolon
+    Semicolon,
+    Tilde,
+    Hypen,
+    HypenHypen,
 }
 
 
@@ -39,6 +42,9 @@ pub enum Token{
     OpenParen(Span),CloseParen(Span),
     OpenBrace(Span),CloseBrace(Span),
     Semicolon(Span),
+    Tilde(Span),
+    Hypen(Span),
+    HypenHypen(Span),
 
     //Keywords
     Return(Span),
@@ -60,6 +66,9 @@ impl Token{
             Token::Return(_) => TokenType::Return,
             Token::Int(_) => TokenType::Int,
             Token::Void(_) => TokenType::Void,
+            Token::Tilde(_) => TokenType::Tilde,
+            Token::Hypen(_) => TokenType::Hypen,
+            Token::HypenHypen(_) => TokenType::HypenHypen,
         }
     }
 
@@ -75,6 +84,9 @@ impl Token{
             Token::Return(_) => "return".to_string(),
             Token::Int (_)=> "int".to_string(),
             Token::Void (_)=> "void".to_string(),
+            Token::Tilde(_) => "~".to_string(),
+            Token::Hypen(_) => "-".to_string(),
+            Token::HypenHypen(_) => "--".to_string(),
         }
     }
     pub fn span(&self) -> &Span {
@@ -88,7 +100,11 @@ impl Token{
             Token::Semicolon(span) |
             Token::Return(span) |
             Token::Int(span) |
+            Token::Tilde(span) |
+            Token::Hypen(span) |
+            Token::HypenHypen(span) |
             Token::Void(span) => span,
+            
         }
     }
     pub fn from_string(s: &str) -> Option<TokenType> {
@@ -101,6 +117,9 @@ impl Token{
             "return" => Some(TokenType::Return),
             "int" => Some(TokenType::Int),
             "void" => Some(TokenType::Void),
+            "~" => Some(TokenType::Tilde),
+            "-" => Some(TokenType::Hypen),
+            "--" => Some(TokenType::HypenHypen),
             _ => None,
         }
     }
@@ -116,6 +135,9 @@ impl Token{
             TokenType::OpenBrace => {Token::OpenBrace(span)}
             TokenType::CloseBrace => {Token::CloseBrace(span)}
             TokenType::Semicolon => {Token::Semicolon(span)}
+            TokenType::Tilde => {Token::Tilde(span)}
+            TokenType::Hypen => {Token::Hypen(span)}
+            TokenType::HypenHypen => {Token::HypenHypen(span)}
         }
     }
 

@@ -94,5 +94,28 @@ mod tests {
         ]);
         Ok(())
     }
+    #[test]
+    fn unary_tokens_test()-> Result<(),LexerError>{
+        let mut lex = Lexer::new();
+        let tokens = lex.tokenize("~ -- -".to_string())?;
+        test(tokens, vec![
+            "~".to_string(),
+            "--".to_string(),
+            "-".to_string(),
+        ]);
+        let tokens = lex.tokenize("--2".to_string())?;
+        test(tokens, vec![
+            "--".to_string(),
+            "2".to_string(),
+        ]);
+        let tokens = lex.tokenize("~~2".to_string())?;
+        test(tokens, vec![
+            "~".to_string(),
+            "~".to_string(),
+            "2".to_string(),
+        ]);
+
+        Ok(())
+    }
 
 }

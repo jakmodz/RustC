@@ -6,16 +6,10 @@ version = 4
 name = "Compiler"
 version = "0.1.0"
 dependencies = [
- "Lex",
+ "ast",
  "clap",
-]
-
-[[package]]
-name = "Lex"
-version = "0.1.0"
-dependencies = [
- "lazy_static",
- "regex",
+ "codegen",
+ "lex",
  "thiserror",
 ]
 
@@ -79,6 +73,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "ast"
+version = "0.1.0"
+dependencies = [
+ "lex",
+ "thiserror",
+]
+
+[[package]]
 name = "clap"
 version = "4.5.51"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -119,6 +121,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a1d728cc89cf3aee9ff92b05e62b19ee65a02b5702cff7d5a377e32c6ae29d8d"
 
 [[package]]
+name = "codegen"
+version = "0.1.0"
+dependencies = [
+ "ast",
+ "lex",
+]
+
+[[package]]
 name = "colorchoice"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -141,6 +151,15 @@ name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
+
+[[package]]
+name = "lex"
+version = "0.1.0"
+dependencies = [
+ "lazy_static",
+ "regex",
+ "thiserror",
+]
 
 [[package]]
 name = "memchr"

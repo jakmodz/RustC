@@ -8,8 +8,8 @@ pub enum LexerError{
     UnterminatedComment(usize,usize),
     #[error("Unexpected end of file")]
     UnexpectedEOF,
-    #[error("Invalid number at line {0}")]
-    InvalidNumberFormat(char),
+    #[error("Invalid number at line {0} column {1}")]
+    InvalidNumberFormat(char,char),
     #[error("Unknown error")]
     UnknownToken
     

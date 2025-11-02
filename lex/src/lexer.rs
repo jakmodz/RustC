@@ -1,5 +1,5 @@
 use regex::Regex;
-use crate::token::{Token,TokenType};
+use crate::token::{Span, Token, TokenType};
 use lazy_static::lazy_static;
 use crate::error::LexerError;
 
@@ -25,12 +25,8 @@ lazy_static! {
             (Regex::new(r"^\;").unwrap(), TokenType::Semicolon),
         ]
     };
-    static ref SKIP_PATTERNS: Vec<Regex> = {
-        vec![
-            Regex::new(r"^//[^\n]*").unwrap(),
-            Regex::new(r"^/\*[\s\S]*?\*/").unwrap(),
-        ]
-    };
+    static ref COMMENT: Regex =Regex::new(r"^//[^\n]*\n?").unwrap();
+    static ref MULIT_LINE_COMMENT: Regex = Regex::new(r"^/\*[\s\S]*?\*/").unwrap();
 }
 
 pub struct Lexer{
@@ -47,25 +43,50 @@ impl Lexer{
             pos:0
         }
     }
+    fn new_line(&mut self){
+        self.line+=1;
+        self.pos = 0;
+    }
+    fn skip_comments(&mut self,remaining: &mut String )->bool{
+        if let Some(mat) = COMMENT.find(&remaining){
+            self.new_line();
+            *remaining = remaining[mat.len()..].to_string();
+            return  true;
+        }
+        if let Some(mat) = MULIT_LINE_COMMENT.find(&remaining){
+            let mat_text = mat.as_str();
 
-
-    pub fn tokenize(&mut self,mut input:String)->Result<Vec<Token>,LexerError>{
+            for c in mat_text.chars() {
+                if c == '\n' {
+                    self.new_line();
+                }else{
+                    self.pos+= 1;
+                }
+            }
+            *remaining = remaining[mat.end()..].to_string();
+            return true;
+        }
+        false
+    }
+    pub fn tokenize(&mut self,input:String)->Result<Vec<Token>,LexerError>{
         let mut tokens = Vec::new();
         let mut remaining = input.clone();
 
         while !remaining.is_empty() {
             if remaining.starts_with(char::is_whitespace){
-                remaining = remaining.trim_start().to_string();
-                if remaining.starts_with("//") {
-                    if let Some(newline_pos) = remaining.find('\n') {
-                        remaining = remaining[newline_pos..].to_string();
-                    } else {
-                        break;
-                    }
-                    continue;
+                let patters = &[' ','\t'];
+               remaining = remaining.trim_start_matches(patters).to_string();
+                if remaining.starts_with("\n") {
+                    self.new_line();
+                    remaining = remaining[1..].to_string();
                 }
                 continue
             }
+
+            if self.skip_comments(&mut remaining) {
+                continue
+            }
+
 
             let mut longest_match: Option<(TokenType,&str)> = None;
             for (regex,token_type) in PATTERNS.iter(){
@@ -77,14 +98,13 @@ impl Lexer{
                }
             }
             if longest_match.is_none(){
-                return Err(LexerError::UnknownToken)
+                return Err(LexerError::InvalidToken(self.line,self.pos+1,remaining.chars().next().unwrap()))
             }
 
             let matched = longest_match.unwrap();
-
-            tokens.push(Token::create_token(matched.0,matched.1));
+            self.pos += matched.1.len();
+            tokens.push(Token::create_token(matched.0,matched.1,Span::new(self.pos,self.line)));
             remaining = remaining[matched.1.len()..].to_string();
-
 
         }
 

@@ -5,4 +5,7 @@ edition = "2024"
 
 [dependencies]
 clap = {version = "4.5.51", features = ["derive"]}
-Lex = {path = "../Lex" }
+lex = {path = "../lex" }
+ast = {path = "../ast" }
+codegen = {path = "../codegen" }
+thiserror.workspace = true

@@ -1,16 +1,21 @@
-use ast::ast::Program;
 use crate::tacky;
-use crate::tacky::{TackyFunction, TackyInstruction};
+use crate::tacky::{BinaryOp, TackyFunction, TackyInstruction, Val};
+use ast::ast::Program;
 use lex::token::TokenType;
 pub struct TackyParser {
-
+    pub var_counter: usize
 }
 
 impl TackyParser {
     pub fn new() -> Self {
         Self {
-
+            var_counter: 0
         }
+    }
+    fn make_temporary(&mut self) -> String {
+        let str = format!("tmp{},", self.var_counter);
+        self.var_counter += 1;
+        str
     }
     pub fn emit_tacky(&mut self,ast:Program)->tacky::Program {
 
@@ -60,6 +65,28 @@ impl TackyParser {
             }
             ast::ast::Expression::Grouping {expr}=>{
                 self.convert_expr(*expr,instructions)
+            }
+            ast::ast::Expression::Binary { op, left, right } => {
+                let v1 = self.convert_expr(*left, instructions);
+                let v2 = self.convert_expr(*right, instructions);
+                let dst_name = self.make_temporary();
+                let dst = Val::Var(dst_name);
+                let binary_op = match op.get_token_type() {
+                    TokenType::Plus => BinaryOp::Add,
+                    TokenType::Star => BinaryOp::Multiply,
+                    TokenType::Hypen => BinaryOp::Subtract,
+                    TokenType::Slash => BinaryOp::Divide,
+                    TokenType::Percent => BinaryOp::Modulo,
+                    _ => panic!("Unsupported binary operator")
+                };
+                instructions.push(TackyInstruction::Binary {
+                    binary_op,
+                    src1: v1,
+                    src2: v2,
+                    dst: dst.clone(),
+                }
+                );
+                dst
             }
         }
     }

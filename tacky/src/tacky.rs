@@ -12,6 +12,7 @@ pub struct TackyFunction {
 pub enum TackyInstruction {
     Return(Val),
     Unary{unary_op: UnaryOp, src: Val,dst: Val},
+    Binary { binary_op: BinaryOp, src1: Val, src2: Val, dst: Val }
 
 }
 
@@ -24,6 +25,14 @@ pub enum Val{
 pub enum UnaryOp{
     Complement,
     Negate,
+}
+#[derive(Clone, Debug)]
+pub enum BinaryOp {
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Modulo,
 }
 
 

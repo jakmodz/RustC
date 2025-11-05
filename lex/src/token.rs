@@ -1,3 +1,18 @@
+use lazy_static::lazy_static;
+use std::collections::HashMap;
+
+lazy_static! {
+    static ref OPERATOR_PRECEDENCE: HashMap<TokenType, usize> = {
+        let mut map = HashMap::new();
+        map.insert(TokenType::Plus,45);
+        map.insert(TokenType::Hypen,45);
+        map.insert(TokenType::Percent,50);
+        map.insert(TokenType::Star,50);
+        map.insert(TokenType::Slash,50);
+        map
+
+    };
+}
 #[derive(PartialEq,Debug,Clone)]
 pub struct Span{
     pub column:usize,
@@ -14,6 +29,7 @@ impl Span{
 }
 
 #[derive(Debug,Clone,PartialEq,Eq)]
+#[derive(Hash)]
 pub enum TokenType {
     Identifier,
     Constant,
@@ -28,6 +44,10 @@ pub enum TokenType {
     Tilde,
     Hypen,
     HypenHypen,
+    Star,
+    Plus,
+    Slash,
+    Percent
 }
 
 
@@ -45,6 +65,12 @@ pub enum Token{
     Tilde(Span),
     Hypen(Span),
     HypenHypen(Span),
+    //Binary tokens
+    Star(Span),
+    Plus(Span),
+    Slash(Span),
+    Percent(Span),
+
 
     //Keywords
     Return(Span),
@@ -69,6 +95,10 @@ impl Token{
             Token::Tilde(_) => TokenType::Tilde,
             Token::Hypen(_) => TokenType::Hypen,
             Token::HypenHypen(_) => TokenType::HypenHypen,
+            Token::Plus(_) => TokenType::Plus,
+            Token::Star(_) => TokenType::Star,
+            Token::Percent(_) => TokenType::Percent,
+            Token::Slash(_) => TokenType::Slash,
         }
     }
 
@@ -87,6 +117,10 @@ impl Token{
             Token::Tilde(_) => "~".to_string(),
             Token::Hypen(_) => "-".to_string(),
             Token::HypenHypen(_) => "--".to_string(),
+            Token::Plus(_) => "+".to_string(),
+            Token::Star(_) => "*".to_string(),
+            Token::Percent(_) => "%".to_string(),
+            Token::Slash(_) => "/".to_string(),
         }
     }
     pub fn span(&self) -> &Span {
@@ -103,6 +137,10 @@ impl Token{
             Token::Tilde(span) |
             Token::Hypen(span) |
             Token::HypenHypen(span) |
+            Token::Star(span) |
+            Token::Plus(span) |
+            Token::Slash(span) |
+            Token::Percent(span) |
             Token::Void(span) => span,
             
         }
@@ -120,6 +158,10 @@ impl Token{
             "~" => Some(TokenType::Tilde),
             "-" => Some(TokenType::Hypen),
             "--" => Some(TokenType::HypenHypen),
+            "+" => Some(TokenType::Plus),
+            "%" => Some(TokenType::Percent),
+            "*" => Some(TokenType::Star),
+            "/" => Some(TokenType::Slash),
             _ => None,
         }
     }
@@ -138,7 +180,24 @@ impl Token{
             TokenType::Tilde => {Token::Tilde(span)}
             TokenType::Hypen => {Token::Hypen(span)}
             TokenType::HypenHypen => {Token::HypenHypen(span)}
+            TokenType::Percent => { Token::Percent(span) }
+            TokenType::Slash => { Token::Slash(span) }
+            TokenType::Star => { Token::Star(span) }
+            TokenType::Plus => { Token::Plus(span) }
         }
+    }
+    pub fn is_binary_op(&self) -> bool {
+        match self.get_token_type() {
+            TokenType::Hypen | TokenType::Plus |
+            TokenType::Slash | TokenType::Star | TokenType::Percent => true,
+            _ => false
+        }
+    }
+    pub fn get_precedence(&self) -> usize {
+        if let Some(u) = OPERATOR_PRECEDENCE.get(&self.get_token_type()) {
+            return u.clone();
+        }
+        0
     }
 
 }

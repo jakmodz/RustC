@@ -23,4 +23,5 @@ pub enum  Expression{
     Constant(i64),
     UnaryOP{op:Token,expr:Box<Expression>},
     Grouping{expr:Box<Expression>},
+    Binary { op: Token, left: Box<Expression>, right: Box<Expression> },
 }

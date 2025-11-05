@@ -1,7 +1,7 @@
 use crate::ast::*;
+use crate::parser_error::ParserError;
 use lex::token;
 use lex::token::{Token, TokenType};
-use crate::parser_error::ParserError;
 
 
 pub struct Parser{
@@ -83,7 +83,8 @@ impl Parser{
      */
     fn parse_stmt(&mut self)->Result<Stmt,ParserError>{
         self.excepted_token(TokenType::Return)?;
-        let return_val = self.parse_expression()?;
+        let next_token = self.peek()?;
+        let return_val = self.parse_expression(next_token.get_precedence())?;
         self.excepted_token(TokenType::Semicolon)?;
         Ok(Stmt::Return{expr:return_val})
     }
@@ -93,22 +94,34 @@ impl Parser{
     /*
     Parse Expression
     */
-    fn parse_expression(&mut self)->Result<Expression,ParserError>{
+    fn parse_expression(&mut self, min_precedence: usize) -> Result<Expression, ParserError> {
+        if self.pos >= self.tokens.len() {
+            return Err(ParserError::UnexpectedEOF);
+        }
+        let mut left = self.parse_factor()?;
+        let mut next_token = self.peek()?;
+        while next_token.is_binary_op() && next_token.get_precedence() >= min_precedence {
+            let operator = self.eat()?;
+            let right = self.parse_expression(next_token.get_precedence() + 1)?;
+            left = Expression::Binary { op: operator, left: Box::new(left), right: Box::new(right) };
+            next_token = self.peek()?
+        }
+
+        Ok(left)
+    }
+    fn parse_factor(&mut self) -> Result<Expression, ParserError> {
         if self.pos >= self.tokens.len() {
             return Err(ParserError::UnexpectedEOF);
         }
         let next_token =self.peek()?;
-
-
-
-        match next_token{
+        match next_token {
             Token::Constant(value, _span)=>{
                 self.eat()?;
                 Ok(Expression::Constant(value))
             },
-           Token::OpenParen(_)=>{
+            Token::OpenParen(_) => {
                 self.eat()?;
-                let expr = self.parse_expression()?;
+                let expr = self.parse_expression(next_token.get_precedence())?;
                 self.excepted_token(TokenType::CloseParen)?;
                 Ok(Expression::Grouping{
                     expr:Box::new(expr)
@@ -116,18 +129,16 @@ impl Parser{
             }
             Token::Hypen(_)| Token::Tilde(_)=>{
                 let op = self.eat()?;
-                let expr = self.parse_expression()?;
-
+                let expr = self.parse_factor()?;
                 Ok(Expression::UnaryOP{
                     op,
                     expr:Box::new(expr)
                 })
             }
-
             _=>{
                 let current_token = self.peek()?;
                 Err(ParserError::UnexpectedToken(current_token.span().line,current_token.span().column,
-                    format!("{:?}",current_token.get_token_type())))
+                                                 format!("{:?}", current_token.get_token_type())))
             }
         }
     }

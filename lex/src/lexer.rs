@@ -1,7 +1,7 @@
-use regex::Regex;
+use crate::error::LexerError;
 use crate::token::{Span, Token, TokenType};
 use lazy_static::lazy_static;
-use crate::error::LexerError;
+use regex::Regex;
 
 lazy_static! {
     static ref PATTERNS: Vec<(Regex, TokenType)> = {
@@ -26,7 +26,10 @@ lazy_static! {
             (Regex::new(r"^\~").unwrap(), TokenType::Tilde),
             (Regex::new(r"^\-").unwrap(), TokenType::Hypen),
             (Regex::new(r"^\-\-").unwrap(), TokenType::HypenHypen),
-
+            (Regex::new(r"^\+").unwrap(), TokenType::Plus),
+            (Regex::new(r"^\*").unwrap(), TokenType::Star),
+            (Regex::new(r"^\%").unwrap(), TokenType::Percent),
+            (Regex::new(r"^\/").unwrap(), TokenType::Slash),
 
         ]
     };

@@ -1,6 +1,6 @@
-use tacky::tacky::Val;
 use crate::asm_ast::*;
 use tacky::tacky::TackyInstruction;
+use tacky::tacky::{BinaryOp, Val};
 
 pub struct AsmParser{
 
@@ -40,6 +40,46 @@ impl AsmParser {
                 instructions.push(Instruction::Mov{src:self.convert_val(src)
                     ,dst:self.convert_val(dst.clone())});
                 instructions.push(Instruction::Unary{op:convert_unary_op(unary_op),operand:self.convert_val(dst)});
+            }
+            TackyInstruction::Binary { binary_op, dst, src2, src1 } => {
+                instructions.push(Instruction::Mov {
+                    src: self.convert_val(src1.clone()),
+                    dst: self.convert_val(dst.clone()),
+                });
+
+                match binary_op {
+                    BinaryOp::Divide => {
+                        instructions.push(Instruction::Mov {
+                            src: self.convert_val(src1.clone()),
+                            dst: Operand::Reg(Register::AX),
+                        });
+                        instructions.push(Instruction::Cdq);
+                        instructions.push(Instruction::IDiv { operand: self.convert_val(src2) });
+                        instructions.push(Instruction::Mov {
+                            src: Operand::Reg(Register::AX),
+                            dst: self.convert_val(dst),
+                        });
+                    }
+                    BinaryOp::Modulo => {
+                        instructions.push(Instruction::Mov {
+                            src: self.convert_val(src1.clone()),
+                            dst: Operand::Reg(Register::AX),
+                        });
+                        instructions.push(Instruction::Cdq);
+                        instructions.push(Instruction::IDiv { operand: self.convert_val(src2) });
+                        instructions.push(Instruction::Mov {
+                            src: Operand::Reg(Register::DX),
+                            dst: self.convert_val(dst),
+                        });
+                    }
+                    _ => {
+                        instructions.push(Instruction::Binary {
+                            binary_op: convert_binary_op(binary_op),
+                            operand1: self.convert_val(src2),
+                            operand2: self.convert_val(dst),
+                        })
+                    }
+                }
             }
         }
     }

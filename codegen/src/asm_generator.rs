@@ -1,6 +1,6 @@
 use crate::asm_ast::*;
-use std::io::{ Write, Result};
-use std::collections::{ HashMap};
+use std::collections::HashMap;
+use std::io::{Result, Write};
 
 pub struct AsmGenerator {
     pub vars: HashMap<String, i64>,
@@ -75,6 +75,22 @@ impl AsmGenerator {
             }
             Instruction::Allocate { size} =>{
                 writeln!(out, "subq\t${},%rsp",size)?;
+            },
+            Instruction::Binary { binary_op, operand1, operand2 } => {
+                self.write_binary_operator(out, binary_op)?;
+                write!(out, "\t")?;
+                self.write_operand(out, operand1)?;
+                write!(out, ", ")?;
+                self.write_operand(out, operand2)?;
+                writeln!(out)?;
+            }
+            Instruction::IDiv { operand } => {
+                write!(out, "idiv\t")?;
+                self.write_operand(out, operand)?;
+                writeln!(out)?;
+            }
+            Instruction::Cdq => {
+                writeln!(out, "cdq")?;
             }
         }
         Ok(())
@@ -90,8 +106,14 @@ impl AsmGenerator {
                     Register::AX => {
                         write!(out, "%eax")?;
                     }
+                    Register::DX => {
+                        write!(out, "%edx")?;
+                    }
                     Register::R10 => {
                         write!(out, "%r10d")?;
+                    }
+                    Register::R11 => {
+                        write!(out, "%r11d")?;
                     }
                 }
             }
@@ -118,6 +140,20 @@ impl AsmGenerator {
             }
             UnaryOpcode::Neg => {
                 write!(out, "negl ")?;
+            }
+        }
+        Ok(())
+    }
+    fn write_binary_operator(&self, out: &mut Box<dyn Write>, op: &BinaryOpcode) -> Result<()> {
+        match op {
+            BinaryOpcode::Add => {
+                write!(out, "addl")?;
+            }
+            BinaryOpcode::Sub => {
+                write!(out, "subl")?;
+            }
+            BinaryOpcode::Mul => {
+                write!(out, "imull")?;
             }
         }
         Ok(())

@@ -1,5 +1,6 @@
+use tacky::tacky::Val;
 use crate::asm_ast::*;
-use ast::ast::*;
+use tacky::tacky::TackyInstruction;
 
 pub struct AsmParser{
 
@@ -12,11 +13,11 @@ impl AsmParser {
         }
     }
 
-    pub fn parse(&mut self, program: Program)->AsmProgram{
+    pub fn parse(&mut self, program: tacky::tacky::Program)->AsmProgram{
         let mut instructions = Vec::new();
 
-        for stmt in program.function.body {
-           self.convert_stmt(stmt,&mut instructions);
+        for ins in program.function.body {
+            self.convert_instruction(ins,&mut instructions);
         }
 
         AsmProgram{
@@ -27,30 +28,31 @@ impl AsmParser {
         }
     }
 
-    fn convert_stmt(&mut self, stmt:Stmt,instructions:&mut Vec<Instruction>){
-        match stmt {
-            Stmt::Return { expr } => {
-
-                self.convert_expr(expr,instructions);
-                // instructions.push(Instruction::Mov {
-                //     src: Operand::Register,
-                //     dst: Operand::Imn(c)
-                // });
+    fn convert_instruction(&mut self, ins:TackyInstruction,instructions:&mut Vec<Instruction>){
+        match ins {
+            TackyInstruction::Return(val) =>{
+                let ins = Instruction::Mov{src:self.convert_val(val)
+                    ,dst:Operand::Reg(Register::AX)};
+                instructions.push(ins);
                 instructions.push(Instruction::Ret);
             }
-            Stmt::If { .. } => {todo!()}
-        }
-    }
-
-
-    fn convert_expr(&mut self, expr: Expression,instructions:&mut Vec<Instruction>){
-        match expr {
-            Expression::Constant(c) => {
-                instructions.push(Instruction::Mov {
-                    dst: Operand::Register,
-                    src: Operand::Imn(c)
-                })
+            TackyInstruction::Unary { unary_op,src,dst } => {
+                instructions.push(Instruction::Mov{src:self.convert_val(src)
+                    ,dst:self.convert_val(dst.clone())});
+                instructions.push(Instruction::Unary{op:convert_unary_op(unary_op),operand:self.convert_val(dst)});
             }
         }
     }
+
+    fn convert_val(&mut self, val:tacky::tacky::Val)->Operand{
+        match val {
+            Val::Constant(c)=>{
+                Operand::Imn(c)
+            }
+            Val::Var(name)=>{
+                Operand::Pseudo(name)
+            }
+        }
+    }
+
 }

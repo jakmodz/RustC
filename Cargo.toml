@@ -1,5 +1,5 @@
 [workspace]
-members = ["ast","Compiler", "lex", "codegen"]
+members = ["ast","Compiler", "lex", "codegen", "tacky"]
 resolver = "3"
 
 [workspace.dependencies]

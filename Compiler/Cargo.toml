@@ -8,4 +8,5 @@ clap = {version = "4.5.51", features = ["derive"]}
 lex = {path = "../lex" }
 ast = {path = "../ast" }
 codegen = {path = "../codegen" }
+tacky= {path = "../tacky" }
 thiserror.workspace = true

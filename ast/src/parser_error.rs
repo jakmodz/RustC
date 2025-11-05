@@ -6,6 +6,8 @@ pub enum ParserError{
     UnexpectedToken(usize,usize,String),
     #[error("Expected token '{2}' but found '{3}' at line {0}, column {1}")]
     ExpectedToken(usize,usize,String,String),
+    #[error("Invalid expression at line {0}, column {1}: {2}")]
+    ExpressionError(usize,usize,String),
     #[error("Unexpected end of file")]
     UnexpectedEOF,
     #[error("Unknown parsing error")]

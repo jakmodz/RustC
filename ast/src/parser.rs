@@ -37,7 +37,22 @@ impl Parser{
         }
         Ok(())
     }
-
+   
+    fn peek(&mut self,)->Result<Token,ParserError>{
+        if self.pos >= self.tokens.len(){
+            return Err(ParserError::UnexpectedEOF);
+        }
+        let current_token = &self.tokens[self.pos];
+        Ok(current_token.clone())
+    }
+    fn eat(&mut self)->Result<Token,ParserError>{
+        if self.pos >= self.tokens.len(){
+            return Err(ParserError::UnexpectedEOF);
+        }
+        let current_token = &self.tokens[self.pos];
+        self.pos+=1;
+        Ok(current_token.clone())
+    }
 
     pub fn parse(&mut self,)->Result<Program,ParserError>{
         self.excepted_token(TokenType::Int)?;
@@ -82,18 +97,42 @@ impl Parser{
         if self.pos >= self.tokens.len() {
             return Err(ParserError::UnexpectedEOF);
         }
-        let current_token = &self.tokens[self.pos];
-        self.pos+=1;
-        match &current_token{
+        let next_token =self.peek()?;
+
+
+
+        match next_token{
             Token::Constant(value, _span)=>{
-                Ok(Expression::Constant(*value))
+                self.eat()?;
+                Ok(Expression::Constant(value))
             },
+           Token::OpenParen(_)=>{
+                self.eat()?;
+                let expr = self.parse_expression()?;
+                self.excepted_token(TokenType::CloseParen)?;
+                Ok(Expression::Grouping{
+                    expr:Box::new(expr)
+                })
+            }
+            Token::Hypen(_)| Token::Tilde(_)=>{
+                let op = self.eat()?;
+                let expr = self.parse_expression()?;
+
+                Ok(Expression::UnaryOP{
+                    op,
+                    expr:Box::new(expr)
+                })
+            }
+
             _=>{
+                let current_token = self.peek()?;
                 Err(ParserError::UnexpectedToken(current_token.span().line,current_token.span().column,
                     format!("{:?}",current_token.get_token_type())))
             }
         }
     }
+    
+
 }
 
 

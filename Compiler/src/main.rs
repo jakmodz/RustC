@@ -35,7 +35,9 @@ struct Args{
     parse: bool,
     //to codegen stage
     #[arg(long)]
-    codegen: bool
+    codegen: bool,
+    #[arg(long)]
+    tacky: bool,
 }
 
 
@@ -55,21 +57,43 @@ fn main() {
 fn run() -> Result<(), CompilerError> {
     let args = Args::parse();
 
-    // --- 1. Read input file ---
+
     let mut file = File::open(&args.path)?;
     let mut content = String::new();
     file.read_to_string(&mut content)?;
 
-    // --- 2. Lexing + parsing ---
-
+    /*
+       lexing stage
+     */
     let mut lex = Lexer::new();
     let tokens = lex.tokenize(content)?;
     if args.lex { return Ok(()) }
+
+    /*
+      parsing Stage
+    */
     let mut parser = ast::parser::Parser::new(tokens);
     let ast = parser.parse()?;
-    let asm_ast = AsmParser::new().parse(ast);
+    
     if args.parse { return Ok(()) }
-    // --- 3. Generate assembly ---
+
+    /*
+    Tacky Generation Stage
+    */
+    let mut tacky_parser = tacky::tacky_parser::TackyParser::new();
+    let tacky_program = tacky_parser.emit_tacky(ast.clone());
+    
+    if args.tacky { return Ok(()) }
+    
+    
+    /*
+     Assemble Stage
+    */
+
+    let mut asm_gen = asm_generator::AsmGenerator::new();
+    let asm_ast = AsmParser::new().parse(tacky_program);
+
+    if args.codegen { return Ok(()) }
     let input_path = Path::new(&args.path);
     let stem = input_path.file_stem().unwrap_or(OsStr::new("output"));
     let parent = input_path.parent().unwrap_or_else(|| Path::new("."));
@@ -79,24 +103,20 @@ fn run() -> Result<(), CompilerError> {
 
 
     let output_path = parent.join(stem);
-
     let file_out = File::create(&asm_path)?;
     let  out: Vec<Box<dyn Write>> = vec![
         Box::new(stdout()),
         Box::new(file_out),
     ];
 
-    let mut asm_gen = asm_generator::AsmGenerator::new();
     asm_gen.write(asm_ast, out)?;
-
-    // --- 4. Assemble + link into executable ---
     let status = std::process::Command::new("gcc")
         .arg("-o")
         .arg(&output_path)
         .arg(&asm_path)
         .status()
         .expect("failed to run gcc");
-    if args.codegen { return Ok(()) }
+
     if !status.success() {
         eprintln!("gcc linking failed for {:?}", asm_path);
         exit(1);

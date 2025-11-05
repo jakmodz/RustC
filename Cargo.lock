@@ -10,6 +10,7 @@ dependencies = [
  "clap",
  "codegen",
  "lex",
+ "tacky",
  "thiserror",
 ]
 
@@ -126,6 +127,7 @@ version = "0.1.0"
 dependencies = [
  "ast",
  "lex",
+ "tacky",
 ]
 
 [[package]]
@@ -235,6 +237,14 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "tacky"
+version = "0.1.0"
+dependencies = [
+ "ast",
+ "lex",
 ]
 
 [[package]]

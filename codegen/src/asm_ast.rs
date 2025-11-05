@@ -1,4 +1,4 @@
-
+use tacky::tacky::UnaryOp;
 
 #[derive(Debug)]
 pub struct AsmProgram{
@@ -13,11 +13,36 @@ pub struct AsmFunction{
 #[derive(Debug)]
 pub enum Instruction{
     Mov{src: Operand,dst:Operand},
+    Unary{op:UnaryOpcode,operand:Operand},
+    Allocate{size:usize},
     Ret
 }
 
 #[derive(Debug)]
 pub enum Operand{
     Imn(i64),
-    Register
+    Reg(Register),
+    Pseudo(String),
+    Stack(i64)
+}
+
+#[derive(Debug)]
+pub enum Register{
+    AX,
+    R10
+}
+#[derive(Debug)]
+pub enum UnaryOpcode{
+    Not,
+    Neg
+}
+pub(crate )fn convert_unary_op(op:UnaryOp)->UnaryOpcode{
+    match op {
+        UnaryOp::Complement=>{
+            UnaryOpcode::Not
+        }
+        UnaryOp::Negate=>{
+            UnaryOpcode::Neg
+        }
+    }
 }

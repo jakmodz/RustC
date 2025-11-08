@@ -9,6 +9,11 @@ lazy_static! {
         map.insert(TokenType::Percent,50);
         map.insert(TokenType::Star,50);
         map.insert(TokenType::Slash,50);
+        map.insert(TokenType::LeftShift, 40);
+        map.insert(TokenType::RightShift, 40);
+        map.insert(TokenType::Ampersand, 25);
+        map.insert(TokenType::Caret, 20);
+        map.insert(TokenType::Pipe, 15);
         map
 
     };
@@ -47,7 +52,13 @@ pub enum TokenType {
     Star,
     Plus,
     Slash,
-    Percent
+    Percent,
+    Pipe,
+    Ampersand,
+    Caret,
+    LeftShift,
+    RightShift,
+
 }
 
 
@@ -70,6 +81,11 @@ pub enum Token{
     Plus(Span),
     Slash(Span),
     Percent(Span),
+    Pipe      (Span)  ,
+    Ampersand (Span)  ,
+    Caret     (Span)  ,
+    LeftShift (Span)  ,
+    RightShift(Span)  ,
 
 
     //Keywords
@@ -99,6 +115,11 @@ impl Token{
             Token::Star(_) => TokenType::Star,
             Token::Percent(_) => TokenType::Percent,
             Token::Slash(_) => TokenType::Slash,
+            Token::Pipe      (_) => TokenType::Pipe,
+            Token::Ampersand (_) => TokenType::Ampersand,
+            Token::Caret     (_) => TokenType::Caret,
+            Token::LeftShift (_) => TokenType::LeftShift,
+            Token::RightShift(_) => TokenType::RightShift,
         }
     }
 
@@ -121,6 +142,11 @@ impl Token{
             Token::Star(_) => "*".to_string(),
             Token::Percent(_) => "%".to_string(),
             Token::Slash(_) => "/".to_string(),
+            Token::Pipe      (_) => "|".to_string(),
+            Token::Caret     (_) => "^".to_string(),
+            Token::LeftShift (_) =>"<<".to_string(),
+            Token::RightShift(_) => ">>".to_string(),
+            Token::Ampersand(_) => "&".to_string(),
         }
     }
     pub fn span(&self) -> &Span {
@@ -141,8 +167,12 @@ impl Token{
             Token::Plus(span) |
             Token::Slash(span) |
             Token::Percent(span) |
-            Token::Void(span) => span,
-            
+            Token::Pipe(span) |
+            Token::Ampersand (span) |
+            Token::Caret(span) |
+            Token::LeftShift(span) |
+            Token::RightShift(span) |
+            Token::Void(span)=> span,
         }
     }
     pub fn from_string(s: &str) -> Option<TokenType> {
@@ -162,6 +192,11 @@ impl Token{
             "%" => Some(TokenType::Percent),
             "*" => Some(TokenType::Star),
             "/" => Some(TokenType::Slash),
+            "^"=>Some(TokenType::Caret),
+            "&"=>Some(TokenType::Ampersand),
+            "|" =>Some(TokenType::Pipe),
+            "<<"=>Some(TokenType::LeftShift),
+            ">>"=>Some(TokenType::RightShift),
             _ => None,
         }
     }
@@ -184,12 +219,19 @@ impl Token{
             TokenType::Slash => { Token::Slash(span) }
             TokenType::Star => { Token::Star(span) }
             TokenType::Plus => { Token::Plus(span) }
+            TokenType::Pipe=>{Token::Pipe(span) }
+            TokenType::Ampersand=>{Token::Ampersand(span)}
+            TokenType::Caret=>{Token::Caret(span)}
+            TokenType::LeftShift=>{Token::LeftShift(span)}
+            TokenType::RightShift=>{Token::RightShift(span)}
         }
     }
     pub fn is_binary_op(&self) -> bool {
         match self.get_token_type() {
             TokenType::Hypen | TokenType::Plus |
-            TokenType::Slash | TokenType::Star | TokenType::Percent => true,
+            TokenType::Slash | TokenType::Star | TokenType::Percent |
+            TokenType::Pipe | TokenType::Ampersand |TokenType::Caret | 
+            TokenType::LeftShift| TokenType::RightShift=> true,
             _ => false
         }
     }
@@ -199,5 +241,4 @@ impl Token{
         }
         0
     }
-
 }

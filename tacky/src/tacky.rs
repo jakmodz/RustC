@@ -33,6 +33,11 @@ pub enum BinaryOp {
     Multiply,
     Divide,
     Modulo,
+    Or,
+    And,
+    Xor,
+    LeftShift,
+    RightShift,
 }
 
 

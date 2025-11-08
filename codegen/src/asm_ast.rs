@@ -4,13 +4,13 @@ use tacky::tacky::{BinaryOp, UnaryOp};
 pub struct AsmProgram{
     pub function: AsmFunction,
 }
-#[derive(Debug)]
+#[derive(Debug,Clone,PartialEq)]
 pub struct AsmFunction{
     pub name: String,
     pub instructions: Vec<Instruction>
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone,PartialEq)]
 pub enum Instruction{
     Mov{src: Operand,dst:Operand},
     Unary{op:UnaryOpcode,operand:Operand},
@@ -21,7 +21,7 @@ pub enum Instruction{
     Ret
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone,PartialEq)]
 pub enum Operand{
     Imn(i64),
     Reg(Register),
@@ -29,23 +29,28 @@ pub enum Operand{
     Stack(i64)
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone,PartialEq)]
 pub enum Register{
     AX,
     DX,
     R10,
     R11
 }
-#[derive(Debug)]
+#[derive(Debug,Clone,PartialEq)]
 pub enum UnaryOpcode{
     Not,
     Neg
 }
-#[derive(Debug)]
+#[derive(Debug,Clone,PartialEq)]
 pub enum BinaryOpcode {
     Add,
     Sub,
     Mul,
+    Or,
+    And,
+    Xor,
+    Shl,
+    Shr
 }
 pub(crate )fn convert_unary_op(op:UnaryOp)->UnaryOpcode{
     match op {
@@ -68,6 +73,22 @@ pub(crate) fn convert_binary_op(op: BinaryOp) -> BinaryOpcode {
         BinaryOp::Multiply => {
             BinaryOpcode::Mul
         }
+        BinaryOp::Or => {
+            BinaryOpcode::Or
+        }
+        BinaryOp::And => {
+            BinaryOpcode::And
+        }
+        BinaryOp::Xor => {
+            BinaryOpcode::Xor
+        }
+        BinaryOp::LeftShift => {
+            BinaryOpcode::Shl
+        }
+        BinaryOp::RightShift=>{
+            BinaryOpcode::Shr
+        }
+        
         _ => {
             panic!("unsuported")
         }

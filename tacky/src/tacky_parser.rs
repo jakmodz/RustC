@@ -77,6 +77,11 @@ impl TackyParser {
                     TokenType::Hypen => BinaryOp::Subtract,
                     TokenType::Slash => BinaryOp::Divide,
                     TokenType::Percent => BinaryOp::Modulo,
+                    TokenType::LeftShift=>BinaryOp::LeftShift,
+                    TokenType::RightShift=>BinaryOp::RightShift,
+                    TokenType::Ampersand=>BinaryOp::And,
+                    TokenType::Caret=>BinaryOp::Xor,
+                    TokenType::Pipe=>BinaryOp::Or,
                     _ => panic!("Unsupported binary operator")
                 };
                 instructions.push(TackyInstruction::Binary {
@@ -84,8 +89,7 @@ impl TackyParser {
                     src1: v1,
                     src2: v2,
                     dst: dst.clone(),
-                }
-                );
+                });
                 dst
             }
         }

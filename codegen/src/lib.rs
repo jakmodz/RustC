@@ -13,7 +13,7 @@ mod tests {
     fn test_asm_gen() -> std::io::Result<()> {
         let source = String::from(
             "int main(void) {
-    return -(-4);
+    return 5 >> 30;
 }"
         );
         let mut lexer = lex::lexer::Lexer::new();

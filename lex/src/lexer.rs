@@ -6,7 +6,10 @@ use regex::Regex;
 lazy_static! {
     static ref PATTERNS: Vec<(Regex, TokenType)> = {
         vec![
-            // Keywords first (most specific)
+             // Multi-character operators
+            (Regex::new(r"^<<").unwrap(), TokenType::LeftShift),
+            (Regex::new(r"^>>").unwrap(), TokenType::RightShift),
+            (Regex::new(r"^--").unwrap(), TokenType::HypenHypen),
             (Regex::new(r"^int\b").unwrap(), TokenType::Int),
             (Regex::new(r"^void\b").unwrap(), TokenType::Void),
             (Regex::new(r"^return\b").unwrap(), TokenType::Return),
@@ -17,24 +20,36 @@ lazy_static! {
             // Numbers
             (Regex::new(r"^[0-9]+").unwrap(), TokenType::Constant),
 
-            // Punctuation
+
+
+            // Punctuation and single-character operators
             (Regex::new(r"^\(").unwrap(), TokenType::OpenParen),
             (Regex::new(r"^\)").unwrap(), TokenType::CloseParen),
             (Regex::new(r"^\{").unwrap(), TokenType::OpenBrace),
             (Regex::new(r"^\}").unwrap(), TokenType::CloseBrace),
-            (Regex::new(r"^\;").unwrap(), TokenType::Semicolon),
-            (Regex::new(r"^\~").unwrap(), TokenType::Tilde),
-            (Regex::new(r"^\-").unwrap(), TokenType::Hypen),
-            (Regex::new(r"^\-\-").unwrap(), TokenType::HypenHypen),
+            (Regex::new(r"^;").unwrap(), TokenType::Semicolon),
+            (Regex::new(r"^~").unwrap(), TokenType::Tilde),
+            (Regex::new(r"^-").unwrap(), TokenType::Hypen),
             (Regex::new(r"^\+").unwrap(), TokenType::Plus),
             (Regex::new(r"^\*").unwrap(), TokenType::Star),
-            (Regex::new(r"^\%").unwrap(), TokenType::Percent),
-            (Regex::new(r"^\/").unwrap(), TokenType::Slash),
+            (Regex::new(r"^%").unwrap(), TokenType::Percent),
+            (Regex::new(r"^/").unwrap(), TokenType::Slash),
+            (Regex::new(r"^\|").unwrap(), TokenType::Pipe),
+            (Regex::new(r"^&").unwrap(), TokenType::Ampersand),
+            (Regex::new(r"^\^").unwrap(), TokenType::Caret),
+
 
         ]
     };
-    static ref COMMENT: Regex =Regex::new(r"^//[^\n]*\n?").unwrap();
+     static ref SKIP_PATTERNS: Vec<Regex> = {
+        vec![
+           Regex::new(r"^//[^\n]*\n?").unwrap(),
+           Regex::new(r"^#[^\n]*\n?").unwrap()
+        ]
+    };
+
     static ref MULIT_LINE_COMMENT: Regex = Regex::new(r"^/\*[\s\S]*?\*/").unwrap();
+
 }
 
 pub struct Lexer{
@@ -56,24 +71,27 @@ impl Lexer{
         self.pos = 0;
     }
     fn skip_comments(&mut self,remaining: &mut String )->bool{
-        if let Some(mat) = COMMENT.find(&remaining){
-            self.new_line();
-            *remaining = remaining[mat.len()..].to_string();
-            return  true;
+        for c in SKIP_PATTERNS.iter() {
+            if let Some(mat) = c.find(&remaining) {
+                self.new_line();
+                *remaining = remaining[mat.len()..].to_string();
+                return true;
+            }
         }
-        if let Some(mat) = MULIT_LINE_COMMENT.find(&remaining){
-            let mat_text = mat.as_str();
 
+        if let Some(mat) = MULIT_LINE_COMMENT.find(&remaining) {
+            let mat_text = mat.as_str();
             for c in mat_text.chars() {
                 if c == '\n' {
                     self.new_line();
-                }else{
-                    self.pos+= 1;
+                } else {
+                    self.pos += 1;
                 }
             }
             *remaining = remaining[mat.end()..].to_string();
             return true;
         }
+
         false
     }
     pub fn tokenize(&mut self,input:String)->Result<Vec<Token>,LexerError>{

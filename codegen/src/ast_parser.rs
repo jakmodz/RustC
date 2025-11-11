@@ -1,5 +1,5 @@
 use crate::asm_ast::*;
-use tacky::tacky::TackyInstruction;
+use tacky::tacky::{TackyInstruction, UnaryOp};
 use tacky::tacky::{BinaryOp, Val};
 
 pub struct AsmParser{
@@ -37,16 +37,43 @@ impl AsmParser {
                 instructions.push(Instruction::Ret);
             }
             TackyInstruction::Unary { unary_op,src,dst } => {
-                instructions.push(Instruction::Mov{src:self.convert_val(src)
-                    ,dst:self.convert_val(dst.clone())});
-                instructions.push(Instruction::Unary{op:convert_unary_op(unary_op),operand:self.convert_val(dst)});
+                match unary_op {
+                    UnaryOp::Negate | UnaryOp::Complement => {
+                        instructions.push(Instruction::Mov{src:self.convert_val(src)
+                            ,dst:self.convert_val(dst.clone())});
+                        instructions.push(Instruction::Unary{op:convert_unary_op(unary_op),operand:self.convert_val(dst)});
+                    }
+                    UnaryOp::Not => {
+                        instructions.push(Instruction::Cmp {operand1:Operand::Imn(0),
+                            operand2:self.convert_val(src.clone())
+                        });
+                        instructions.push(Instruction::Mov {src:Operand::Imn(0),
+                            dst:self.convert_val(dst.clone())
+                        });
+                        instructions.push(Instruction::SetCc {
+                            cond_code: ConditionCode::Equal,
+                            operand: self.convert_val(dst.clone()),
+                        });
+                    }
+                }
+
             }
             TackyInstruction::Binary { binary_op, dst, src2, src1 } => {
                 instructions.push(Instruction::Mov {
                     src: self.convert_val(src1.clone()),
                     dst: self.convert_val(dst.clone()),
                 });
-
+                if binary_op.is_comparison() {
+                    instructions.push(Instruction::Cmp {
+                        operand1:self.convert_val(src2.clone()),
+                        operand2:self.convert_val(dst.clone())
+                    });
+                    instructions.push(Instruction::SetCc {
+                        cond_code: convert_condition_code(binary_op),
+                        operand: self.convert_val(dst.clone()),
+                    });
+                    return;
+                }
                 match binary_op {
                     BinaryOp::Divide => {
                         instructions.push(Instruction::Mov {
@@ -72,6 +99,7 @@ impl AsmParser {
                             dst: self.convert_val(dst),
                         });
                     }
+
                     _ => {
                         instructions.push(Instruction::Binary {
                             binary_op: convert_binary_op(binary_op),
@@ -79,12 +107,49 @@ impl AsmParser {
                             operand2: self.convert_val(dst),
                         })
                     }
+
                 }
+
+            }
+            TackyInstruction::JumpIfZero{target,cond} =>{
+                instructions.push(Instruction::Cmp {
+                    operand1:Operand::Imn(0),
+                    operand2:self.convert_val(cond)
+                });
+                instructions.push(Instruction::JmpCc{
+                    cond_code:ConditionCode::Equal,
+                    identifier:target
+                });
+            }
+            TackyInstruction::JumpIfNotZero {target,cond}=>{
+                instructions.push(Instruction::Cmp {
+                    operand1:Operand::Imn(0),
+                    operand2:self.convert_val(cond)
+                });
+                instructions.push(Instruction::JmpCc{
+                    cond_code:ConditionCode::NotEqual,
+                    identifier:target
+                });
+            }
+            TackyInstruction::Label(label)=>{
+                instructions.push(Instruction::Label {identifier:label});
+            }
+
+            TackyInstruction::Jump {target}=>{
+                instructions.push(Instruction::Jmp{
+                    identifier:target
+                });
+            }
+            TackyInstruction::Copy {dst,src}=>{
+                instructions.push(Instruction::Mov {
+                    src:self.convert_val(src),
+                    dst:self.convert_val(dst)
+                })
             }
         }
     }
 
-    fn convert_val(&mut self, val:tacky::tacky::Val)->Operand{
+    fn convert_val(&mut self, val:Val)->Operand{
         match val {
             Val::Constant(c)=>{
                 Operand::Imn(c)

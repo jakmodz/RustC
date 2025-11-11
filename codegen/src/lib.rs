@@ -13,7 +13,7 @@ mod tests {
     fn test_asm_gen() -> std::io::Result<()> {
         let source = String::from(
             "int main(void) {
-    return 5 >> 30;
+    return -1 != -2;
 }"
         );
         let mut lexer = lex::lexer::Lexer::new();
@@ -24,7 +24,7 @@ mod tests {
         let asm_ast = AsmParser::new().parse(tacky);
         let mut asm_gen = asm_generator::AsmGenerator::new();
         let  out:Vec<Box<dyn Write>>    = vec![Box::new(stdout()),Box::new(std::fs::File::create("output.s")?)];
-        asm_gen.write(asm_ast,out)?;
+    asm_gen.write(asm_ast,out)?;
         Ok(())
     }
 

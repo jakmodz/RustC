@@ -1,14 +1,14 @@
-
+#[derive(Debug)]
 pub struct Program {
     pub function: TackyFunction,
 
 }
-
+#[derive(Debug)]
 pub struct TackyFunction {
     pub name: String,
     pub body: Vec<TackyInstruction>,
 }
-
+#[derive(Debug)]
 pub enum TackyInstruction {
     Return(Val),
     Unary{unary_op: UnaryOp, src: Val,dst: Val},
@@ -20,7 +20,7 @@ pub enum TackyInstruction {
     Label(String),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Val{
     Var(String),
     Constant(i64),

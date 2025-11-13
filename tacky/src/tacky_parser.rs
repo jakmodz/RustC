@@ -1,8 +1,8 @@
 use crate::tacky;
+use crate::tacky::Val::Constant;
 use crate::tacky::{BinaryOp, TackyFunction, TackyInstruction, Val};
 use ast::ast::Program;
 use lex::token::TokenType;
-use crate::tacky::Val::Constant;
 
 pub struct TackyParser {
     pub var_counter: usize,
@@ -60,7 +60,7 @@ impl TackyParser {
             }
             ast::ast::Expression::UnaryOP {op,expr}=>{
                 let src = self.convert_expr(*expr,instructions);
-                let dst = tacky::Val::Var("tmp".to_string());
+                let dst = Val::Var(self.make_temporary());
                 let unary_op = match op.get_token_type() {
                     TokenType::Hypen => tacky::UnaryOp::Negate,
                     TokenType::Tilde => tacky::UnaryOp::Complement,

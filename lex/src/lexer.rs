@@ -36,6 +36,7 @@ lazy_static! {
             (Regex::new(r"^;").unwrap(), TokenType::Semicolon),
             (Regex::new(r"^~").unwrap(), TokenType::Tilde),
             (Regex::new(r"^-").unwrap(), TokenType::Hypen),
+            (Regex::new(r"^=").unwrap(), TokenType::Equal),
             (Regex::new(r"^\+").unwrap(), TokenType::Plus),
             (Regex::new(r"^\*").unwrap(), TokenType::Star),
             (Regex::new(r"^%").unwrap(), TokenType::Percent),
@@ -46,6 +47,7 @@ lazy_static! {
             (Regex::new(r"^!").unwrap(), TokenType::Exclamation),
             (Regex::new(r"^<").unwrap(), TokenType::Less),
             (Regex::new(r"^>").unwrap(), TokenType::Greater),
+
         ]
     };
 

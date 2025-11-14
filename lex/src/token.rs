@@ -75,7 +75,8 @@ pub enum TokenType {
     Less,
     Greater,
     LessEqual,
-    GreaterEqual
+    GreaterEqual,
+    Equal,
 }
 
 
@@ -120,6 +121,7 @@ pub enum Token{
     Return(Span),
     //types
     Int(Span),Void(Span),
+    Equal(Span),
 
 }
 
@@ -157,7 +159,7 @@ impl Token{
             Token::Greater(_)=>TokenType::Greater,
             Token::LessEqual(_)=>TokenType::LessEqual,
             Token::GreaterEqual(_)=>TokenType::GreaterEqual,
-
+            Token::Equal(_)=>TokenType::Equal,
         }
     }
 
@@ -194,7 +196,7 @@ impl Token{
             Token::Greater(_)=>">".to_string(),
             Token::LessEqual(_)=>"<=".to_string(),
             Token::GreaterEqual(_)=>">=".to_string(),
-
+            Token::Equal(_)=>"=".to_string(),
 
         }
     }
@@ -231,6 +233,7 @@ impl Token{
             Token::GreaterEqual(span)|
             Token::Exclamation(span) |
             Token::Void(span)=> span,
+            Token::Equal(span)=> span,
         }
     }
     pub fn from_string(s: &str) -> Option<TokenType> {
@@ -264,6 +267,7 @@ impl Token{
             ">"=> Some(TokenType::Greater),
             "<="=> Some(TokenType::LessEqual),
             ">="=> Some(TokenType::GreaterEqual),
+            "="=> Some(TokenType::Equal),
             _ => None,
         }
     }
@@ -300,6 +304,7 @@ impl Token{
             TokenType::Greater =>{Token::Greater(span)}
             TokenType::LessEqual =>{Token::LessEqual(span)}
             TokenType::GreaterEqual=>{Token::GreaterEqual(span)}
+            TokenType::Equal =>{Token::Equal(span)}
         }
     }
     pub fn is_binary_op(&self) -> bool {

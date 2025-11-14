@@ -83,8 +83,7 @@ impl Parser{
      */
     fn parse_stmt(&mut self)->Result<Stmt,ParserError>{
         self.excepted_token(TokenType::Return)?;
-        let next_token = self.peek()?;
-        let return_val = self.parse_expression(next_token.get_precedence())?;
+        let return_val = self.parse_expression(0)?;
         self.excepted_token(TokenType::Semicolon)?;
         Ok(Stmt::Return{expr:return_val})
     }
@@ -101,7 +100,8 @@ impl Parser{
         let mut next_token = self.peek()?;
         while next_token.is_binary_op() && next_token.get_precedence() >= min_precedence {
             let operator = self.eat()?;
-            let right = self.parse_expression(next_token.get_precedence() + 1)?;
+            let op_precedence = operator.get_precedence();
+            let right = self.parse_expression(op_precedence + 1)?;
             left = Expression::Binary { op: operator, left: Box::new(left), right: Box::new(right) };
             next_token = self.peek()?
         }
@@ -126,7 +126,7 @@ impl Parser{
                     expr:Box::new(expr)
                 })
             }
-            Token::Hypen(_)| Token::Tilde(_)=>{
+            Token::Hypen(_)| Token::Tilde(_)| Token::Exclamation(_)=>{
                 let op = self.eat()?;
                 let expr = self.parse_factor()?;
                 Ok(Expression::UnaryOP{
@@ -137,7 +137,7 @@ impl Parser{
             _=>{
                 let current_token = self.peek()?;
                 Err(ParserError::UnexpectedToken(current_token.span().line,current_token.span().column,
-                                                 format!("{:?}", current_token.get_token_type())))
+                        format!("{:?}", current_token.get_token_type())))
             }
         }
     }

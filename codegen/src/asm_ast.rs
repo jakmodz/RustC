@@ -16,6 +16,11 @@ pub enum Instruction{
     Unary{op:UnaryOpcode,operand:Operand},
     Binary { binary_op: BinaryOpcode, operand1: Operand, operand2: Operand },
     IDiv { operand: Operand },
+    Cmp{operand1: Operand,operand2: Operand},
+    Jmp{ identifier: String},
+    JmpCc{cond_code: ConditionCode,identifier: String},
+    SetCc{cond_code: ConditionCode,operand: Operand},
+    Label{identifier: String},
     Cdq,
     Allocate{size:usize},
     Ret
@@ -42,6 +47,15 @@ pub enum UnaryOpcode{
     Neg
 }
 #[derive(Debug,Clone,PartialEq)]
+pub enum ConditionCode{
+    Equal,
+    NotEqual,
+    LessThan,
+    LessOrEqual,
+    GreaterThan,
+    GreaterOrEqual
+}
+#[derive(Debug,Clone,PartialEq)]
 pub enum BinaryOpcode {
     Add,
     Sub,
@@ -60,6 +74,10 @@ pub(crate )fn convert_unary_op(op:UnaryOp)->UnaryOpcode{
         UnaryOp::Negate=>{
             UnaryOpcode::Neg
         }
+        // UnaryOpcode::Not=>{
+        //     todo!()
+        // }
+        _ => {todo!()}
     }
 }
 pub(crate) fn convert_binary_op(op: BinaryOp) -> BinaryOpcode {
@@ -93,4 +111,51 @@ pub(crate) fn convert_binary_op(op: BinaryOp) -> BinaryOpcode {
             panic!("unsuported")
         }
     }
+}
+pub(crate) fn convert_condition_code(binary_op: BinaryOp)->ConditionCode{
+    match binary_op {
+        BinaryOp::Equal=>{
+            ConditionCode::Equal
+        }
+        BinaryOp::NotEqual=>{
+            ConditionCode::NotEqual
+        }
+        BinaryOp::LessThan=>{
+            ConditionCode::LessThan
+        }
+        BinaryOp::LeesOrEqual=>{
+            ConditionCode::LessOrEqual
+        }
+        BinaryOp::GreaterThan=>{
+            ConditionCode::GreaterThan
+        }
+        BinaryOp::GreaterOrEqual=>{
+            ConditionCode::GreaterOrEqual
+        }
+        _=>{
+            panic!("not a comparison operator")
+        }
+    }
+}
+pub(crate) fn convert_cond_code(code: &ConditionCode)->String{
+    match code {
+        ConditionCode::Equal=>{
+            "e"
+        }
+        ConditionCode::NotEqual=>{
+            "ne"
+        }
+        ConditionCode::LessThan=>{
+            "l"
+        }
+        ConditionCode::LessOrEqual=>{
+            "le"
+        }
+        ConditionCode::GreaterThan=>{
+            "g"
+        }
+        ConditionCode::GreaterOrEqual=>{
+            "ge"
+        }
+    }.to_string()
 }

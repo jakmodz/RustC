@@ -6,10 +6,18 @@ use regex::Regex;
 lazy_static! {
     static ref PATTERNS: Vec<(Regex, TokenType)> = {
         vec![
-             // Multi-character operators
+            // Multi-character operators MUST come first!
             (Regex::new(r"^<<").unwrap(), TokenType::LeftShift),
             (Regex::new(r"^>>").unwrap(), TokenType::RightShift),
             (Regex::new(r"^--").unwrap(), TokenType::HypenHypen),
+            (Regex::new(r"^&&").unwrap(), TokenType::AmpersandAmpersand),
+            (Regex::new(r"^\|\|").unwrap(), TokenType::PipePipe),
+            (Regex::new(r"^==").unwrap(), TokenType::EqualEqual),
+            (Regex::new(r"^!=").unwrap(), TokenType::ExclamationEqual),
+            (Regex::new(r"^<=").unwrap(), TokenType::LessEqual),
+            (Regex::new(r"^>=").unwrap(), TokenType::GreaterEqual),
+
+            // Keywords
             (Regex::new(r"^int\b").unwrap(), TokenType::Int),
             (Regex::new(r"^void\b").unwrap(), TokenType::Void),
             (Regex::new(r"^return\b").unwrap(), TokenType::Return),
@@ -19,8 +27,6 @@ lazy_static! {
 
             // Numbers
             (Regex::new(r"^[0-9]+").unwrap(), TokenType::Constant),
-
-
 
             // Punctuation and single-character operators
             (Regex::new(r"^\(").unwrap(), TokenType::OpenParen),
@@ -37,19 +43,20 @@ lazy_static! {
             (Regex::new(r"^\|").unwrap(), TokenType::Pipe),
             (Regex::new(r"^&").unwrap(), TokenType::Ampersand),
             (Regex::new(r"^\^").unwrap(), TokenType::Caret),
-
-
+            (Regex::new(r"^!").unwrap(), TokenType::Exclamation),
+            (Regex::new(r"^<").unwrap(), TokenType::Less),
+            (Regex::new(r"^>").unwrap(), TokenType::Greater),
         ]
     };
-     static ref SKIP_PATTERNS: Vec<Regex> = {
+
+    static ref SKIP_PATTERNS: Vec<Regex> = {
         vec![
            Regex::new(r"^//[^\n]*\n?").unwrap(),
-           Regex::new(r"^#[^\n]*\n?").unwrap()
+           Regex::new(r"^#(?:[^\n\\]|\\\n)*\n?").unwrap()
         ]
     };
 
     static ref MULIT_LINE_COMMENT: Regex = Regex::new(r"^/\*[\s\S]*?\*/").unwrap();
-
 }
 
 pub struct Lexer{
@@ -58,22 +65,27 @@ pub struct Lexer{
 }
 
 impl Lexer{
-
-
     pub fn new() -> Self{
         Lexer{
             line:1,
             pos:0
         }
     }
+
     fn new_line(&mut self){
         self.line+=1;
         self.pos = 0;
     }
-    fn skip_comments(&mut self,remaining: &mut String )->bool{
+
+    fn skip_comments(&mut self, remaining: &mut String) -> bool{
         for c in SKIP_PATTERNS.iter() {
             if let Some(mat) = c.find(&remaining) {
-                self.new_line();
+                let matched_text = mat.as_str();
+                if matched_text.ends_with('\n') {
+                    self.new_line();
+                } else {
+                    self.pos += matched_text.len();
+                }
                 *remaining = remaining[mat.len()..].to_string();
                 return true;
             }
@@ -94,20 +106,24 @@ impl Lexer{
 
         false
     }
-    pub fn tokenize(&mut self,input:String)->Result<Vec<Token>,LexerError>{
+
+    pub fn tokenize(&mut self, input:String) -> Result<Vec<Token>,LexerError>{
         let mut tokens = Vec::new();
         let mut remaining = input.clone();
 
         while !remaining.is_empty() {
+
             if remaining.starts_with(char::is_whitespace){
-                let patters = &[' ','\t'];
-               remaining = remaining.trim_start_matches(patters).to_string();
-                if remaining.starts_with("\n") {
+                let ch = remaining.chars().next().unwrap();
+                if ch == '\n' {
                     self.new_line();
-                    remaining = remaining[1..].to_string();
+                } else {
+                    self.pos += 1;
                 }
+                remaining = remaining[ch.len_utf8()..].to_string();
                 continue
             }
+
 
             if self.skip_comments(&mut remaining) {
                 continue
@@ -116,13 +132,14 @@ impl Lexer{
 
             let mut longest_match: Option<(TokenType,&str)> = None;
             for (regex,token_type) in PATTERNS.iter(){
-               if let Some(mat) = regex.find(&remaining){
-                   let match_len = mat.end();
-                   if longest_match.is_none() || match_len > longest_match.as_ref().unwrap().1.len() {
-                       longest_match = Some((token_type.clone(),mat.as_str()))
-                   }
-               }
+                if let Some(mat) = regex.find(&remaining){
+                    let match_len = mat.end();
+                    if longest_match.is_none() || match_len > longest_match.as_ref().unwrap().1.len() {
+                        longest_match = Some((token_type.clone(),mat.as_str()))
+                    }
+                }
             }
+
             if longest_match.is_none(){
                 return Err(LexerError::InvalidToken(self.line,self.pos+1,remaining.chars().next().unwrap()))
             }
@@ -140,7 +157,6 @@ impl Lexer{
             self.pos += matched.1.len();
             tokens.push(Token::create_token(matched.0,matched.1,Span::new(self.pos,self.line)));
             remaining = remaining[matched.1.len()..].to_string();
-
         }
 
         Ok(tokens)

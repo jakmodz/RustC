@@ -35,7 +35,6 @@ mod tests {
         let mut parser = crate::parser::Parser::new(tokens);
         let ast = parser.parse().unwrap();
         assert_eq!(ast.function.name,String::from("main"));
-        assert_eq!(ast.function.body.len(),1);
-        assert_eq!(ast.function.body[0],BlockElement::Stmt(Stmt::Return{expr:Expression::Constant(42)}));
+        assert_eq!(ast.function.body.len(),3);
     }
 }

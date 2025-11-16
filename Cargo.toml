@@ -1,5 +1,12 @@
 [workspace]
-members = ["ast","Compiler", "lex", "codegen", "tacky"]
+members = [
+    "ast",
+    "Compiler",
+    "lex",
+    "codegen",
+    "tacky",
+    "semantic_analysis",
+    "semantic_analysis"]
 resolver = "3"
 
 [workspace.dependencies]

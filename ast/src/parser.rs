@@ -55,15 +55,19 @@ impl Parser{
     }
 
     pub fn parse(&mut self,)->Result<Program,ParserError>{
+        let mut function_body = Vec::new();
         self.excepted_token(TokenType::Int)?;
         self.excepted_token(TokenType::Identifier)?;
         self.excepted_token(TokenType::OpenParen)?;
         self.except_token_optional(TokenType::Void)?;
         self.excepted_token(TokenType::CloseParen)?;
         self.excepted_token(TokenType::OpenBrace)?;
-        let body = self.parse_stmt()?;
-        self.excepted_token(TokenType::CloseBrace)?;
+        while self.peek()?.get_token_type() != TokenType::CloseBrace {
+            let block_item = self.parse_block_element()?;
 
+            function_body.push(block_item);
+        }
+        self.eat()?;
         if self.pos < self.tokens.len(){
             return Err(ParserError::UnexpectedToken(
                 self.tokens[self.pos].span().line,
@@ -73,8 +77,51 @@ impl Parser{
         }
         Ok(Program{function:Function{
             name:"main".to_string(),
-            body:vec![body]
+            body:function_body
         }})
+    }
+    fn parse_block_element(&mut self)->Result<BlockElement,ParserError>{
+        let next_token = self.peek()?;
+        match next_token.get_token_type(){
+            TokenType::Int=>{
+                let decl = self.parse_declaration()?;
+                Ok(BlockElement::Declaration(decl))
+            }
+            _=>{
+                let stmt = self.parse_stmt()?;
+                Ok(BlockElement::Stmt(stmt))
+            }
+        }
+    }
+
+    /*
+    Parse Declaration
+    */
+
+    fn parse_declaration(&mut self)->Result<Declaration,ParserError>{
+
+        self.excepted_token(TokenType::Int)?;
+        let var_name_token = self.eat()?;
+        if var_name_token.get_token_type() != TokenType::Identifier{
+            return Err(ParserError::ExpectedToken(var_name_token.span().line,var_name_token.span().column,
+                format!("{:?}",TokenType::Identifier),format!("{:?}",var_name_token.get_token_type())));
+        }
+        let var_name = match var_name_token {
+            Token::Identifier(name, _span) => name,
+            _ => unreachable!(),
+        };
+        let mut initializer:Option<Expression> = None;
+        let next_token = self.peek()?;
+        if next_token.get_token_type() == TokenType::Equal{
+            self.eat()?;
+            let expr = self.parse_expression(0)?;
+            initializer = Some(expr);
+        }
+        self.excepted_token(TokenType::Semicolon)?;
+        Ok(Declaration::DefineVar{
+            var_name,
+            initializer
+        })
     }
 
 
@@ -82,10 +129,24 @@ impl Parser{
     Parse Statement
      */
     fn parse_stmt(&mut self)->Result<Stmt,ParserError>{
-        self.excepted_token(TokenType::Return)?;
-        let return_val = self.parse_expression(0)?;
-        self.excepted_token(TokenType::Semicolon)?;
-        Ok(Stmt::Return{expr:return_val})
+        let next_token = self.peek()?;
+        match next_token.get_token_type() {
+            TokenType::Return=> {
+                self.eat()?;
+                let return_val = self.parse_expression(0)?;
+                self.excepted_token(TokenType::Semicolon)?;
+                 Ok(Stmt::Return{expr:return_val})
+            },
+            TokenType::Semicolon=>{
+                self.eat()?;
+                Ok(Stmt::Null)
+            }
+            _=> {
+                let expr = self.parse_expression(0)?;
+                self.excepted_token(TokenType::Semicolon)?;
+                Ok(Stmt::Expression{expr})
+            }
+        }
     }
 
 
@@ -99,10 +160,20 @@ impl Parser{
         let mut left = self.parse_factor()?;
         let mut next_token = self.peek()?;
         while next_token.is_binary_op() && next_token.get_precedence() >= min_precedence {
-            let operator = self.eat()?;
-            let op_precedence = operator.get_precedence();
-            let right = self.parse_expression(op_precedence + 1)?;
-            left = Expression::Binary { op: operator, left: Box::new(left), right: Box::new(right) };
+            if next_token.get_token_type() == TokenType::Equal {
+                let op = self.eat()?;
+                let op_precedence = op.get_precedence();
+                let right = self.parse_expression(op_precedence)?;
+                left = Expression::Assignment {
+                    expr_to: Box::new(left),
+                    initializer: Box::new(right),
+                };
+            }else {
+                let operator = self.eat()?;
+                let op_precedence = operator.get_precedence();
+                let right = self.parse_expression(op_precedence + 1)?;
+                left = Expression::Binary { op: operator, left: Box::new(left), right: Box::new(right) };
+            }
             next_token = self.peek()?
         }
 
@@ -133,6 +204,10 @@ impl Parser{
                     op,
                     expr:Box::new(expr)
                 })
+            }
+            Token::Identifier(name,_span)=>{
+                self.eat()?;
+                Ok(Expression::Var(name))
             }
             _=>{
                 let current_token = self.peek()?;

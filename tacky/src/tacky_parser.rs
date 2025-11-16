@@ -10,9 +10,9 @@ pub struct TackyParser {
 }
 
 impl TackyParser {
-    pub fn new() -> Self {
+    pub fn new(var_counter: usize) -> Self {
         Self {
-            var_counter: 0,
+            var_counter,
             label_counter:0
         }
     }
@@ -30,17 +30,27 @@ impl TackyParser {
         format!("{}_{}", name,self.label_counter)
     }
     pub fn emit_tacky(&mut self,ast:Program)->tacky::Program {
-
         let mut body = Vec::new();
 
-        for stmt in ast.function.body {
-                self.convert_stmt(stmt,&mut body);
+        for element in ast.function.body {
+                self.convert_block_element(element, &mut body);
         }
 
         tacky::Program {
             function:TackyFunction{
                 name:ast.function.name,
                 body
+            }
+        }
+    }
+    fn convert_block_element(&mut self, element:ast::ast::BlockElement, body:&mut Vec<tacky::TackyInstruction>) {
+        match element {
+            ast::ast::BlockElement::Stmt(stmt) => {
+                self.convert_stmt(stmt,body);
+            }
+            ast::ast::BlockElement::Declaration(_) => {
+
+                todo!()
             }
         }
     }
@@ -51,10 +61,18 @@ impl TackyParser {
                 body.push(tacky::TackyInstruction::Return(val));
             }
             ast::ast::Stmt::If { .. } => {todo!()}
+            _=>todo!()
         }
     }
     fn convert_expr(&mut self, expr:ast::ast::Expression,instructions:&mut Vec<TackyInstruction>)->tacky::Val {
         match expr {
+            ast::ast::Expression::Assignment {expr_to,initializer} => {
+                todo!()
+            }
+            ast::ast::Expression::Var(name) => {
+                todo!()
+            },
+
             ast::ast::Expression::Constant(c) => {
                 tacky::Val::Constant(c)
             }

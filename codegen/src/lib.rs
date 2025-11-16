@@ -7,21 +7,24 @@ mod tests {
     use super::*;
     use crate::ast_parser::AsmParser;
     use std::io::{stdout, Write};
+    use semantic_analysis::SemanticAnalyzer;
     use tacky::tacky_parser;
 
     #[test]
     fn test_asm_gen() -> std::io::Result<()> {
         let source = String::from(
             "int main(void) {
-    return 1 <= -1;
+    return -a;
 }"
         );
         let mut lexer = lex::lexer::Lexer::new();
         let tokens = lexer.tokenize(source).unwrap();
         let mut parser = ast::parser::Parser::new(tokens);
-        let ast = parser.parse().unwrap();
+        let mut ast = parser.parse().unwrap();
+        let mut analyzer = SemanticAnalyzer::new();
+        analyzer.semantic_analysis(&mut ast).unwrap();
         println!("{:#?}", ast);
-        let tacky = tacky_parser::TackyParser::new().emit_tacky(ast);
+        let tacky = tacky_parser::TackyParser::new(analyzer.var_count).emit_tacky(ast);
         println!("{:#?}", tacky);
         let asm_ast = AsmParser::new().parse(tacky);
         let mut asm_gen = asm_generator::AsmGenerator::new();

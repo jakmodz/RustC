@@ -23,6 +23,7 @@ lazy_static! {
         map.insert(TokenType::Pipe, 15);
         map.insert(TokenType::AmpersandAmpersand, 10);
         map.insert(TokenType::PipePipe, 5);
+        map.insert(TokenType::Equal, 1);
         map
 
     };
@@ -314,7 +315,8 @@ impl Token{
             TokenType::Pipe | TokenType::Ampersand |TokenType::Caret |
             TokenType::LeftShift| TokenType::RightShift| TokenType::AmpersandAmpersand| TokenType::PipePipe |
             TokenType::EqualEqual | TokenType::ExclamationEqual| TokenType::Less|
-            TokenType::Greater| TokenType::LessEqual| TokenType::GreaterEqual=> true,
+            TokenType::Greater| TokenType::LessEqual| TokenType::GreaterEqual|
+            TokenType::Equal => true,
             _ => false
         }
     }

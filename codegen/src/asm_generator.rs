@@ -237,7 +237,3 @@ impl AsmGenerator {
         }
     }
 }
-
-impl Default for AsmGenerator {
-    fn default() -> Self { Self::new() }
-}

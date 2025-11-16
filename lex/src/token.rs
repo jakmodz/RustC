@@ -343,39 +343,42 @@ impl Token {
         }
     }
     pub fn is_binary_op(&self) -> bool {
-        matches!( self.get_token_type(),
+        matches!(
+            self.get_token_type(),
             TokenType::Hypen
-            | TokenType::Plus
-            | TokenType::Slash
-            | TokenType::Star
-            | TokenType::Percent
-            | TokenType::Pipe
-            | TokenType::Ampersand
-            | TokenType::Caret
-            | TokenType::LeftShift
-            | TokenType::RightShift
-            | TokenType::AmpersandAmpersand
-            | TokenType::PipePipe
-            | TokenType::EqualEqual
-            | TokenType::ExclamationEqual
-            | TokenType::Less
-            | TokenType::Greater
-            | TokenType::LessEqual
-            | TokenType::GreaterEqual
-            | TokenType::Equal )
+                | TokenType::Plus
+                | TokenType::Slash
+                | TokenType::Star
+                | TokenType::Percent
+                | TokenType::Pipe
+                | TokenType::Ampersand
+                | TokenType::Caret
+                | TokenType::LeftShift
+                | TokenType::RightShift
+                | TokenType::AmpersandAmpersand
+                | TokenType::PipePipe
+                | TokenType::EqualEqual
+                | TokenType::ExclamationEqual
+                | TokenType::Less
+                | TokenType::Greater
+                | TokenType::LessEqual
+                | TokenType::GreaterEqual
+                | TokenType::Equal
+        )
     }
     pub fn is_compound_assign(&self) -> bool {
-        matches!( self.get_token_type(),
-            | TokenType::PlusEqual
-            | TokenType::HypenEqual
-            | TokenType::StarEqual
-            | TokenType::SlashEqual
-            | TokenType::PercentEqual
-            | TokenType::AmpersandEqual
-            | TokenType::PipeEqual
-            | TokenType::CaretEqual
-            | TokenType::LeftShiftEqual
-            | TokenType::RightShiftEqual)
+        matches!(
+            self.get_token_type(),
+            |TokenType::PlusEqual| TokenType::HypenEqual
+                | TokenType::StarEqual
+                | TokenType::SlashEqual
+                | TokenType::PercentEqual
+                | TokenType::AmpersandEqual
+                | TokenType::PipeEqual
+                | TokenType::CaretEqual
+                | TokenType::LeftShiftEqual
+                | TokenType::RightShiftEqual
+        )
     }
 
     pub fn get_precedence(&self) -> usize {
@@ -386,53 +389,52 @@ impl Token {
     }
 }
 
-
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Token::Identifier(str, _) =>write!(f, "{}", str),
+            Token::Identifier(str, _) => write!(f, "{}", str),
             Token::Constant(i, _) => write!(f, "{}", i),
             Token::OpenParen(_) => write!(f, "("),
-            Token::CloseParen(_) =>write!(f, ")"),
-            Token::OpenBrace(_) => write!(f,"{{"),
-            Token::CloseBrace(_) =>write!(f, "}}"),
-            Token::Semicolon(_) => write!(f,";"),
-            Token::Return(_) =>  write!(f,"return"),
-            Token::Int(_) =>  write!(f,"int"),
-            Token::Void(_) =>  write!(f,"void"),
+            Token::CloseParen(_) => write!(f, ")"),
+            Token::OpenBrace(_) => write!(f, "{{"),
+            Token::CloseBrace(_) => write!(f, "}}"),
+            Token::Semicolon(_) => write!(f, ";"),
+            Token::Return(_) => write!(f, "return"),
+            Token::Int(_) => write!(f, "int"),
+            Token::Void(_) => write!(f, "void"),
             Token::Tilde(_) => write!(f, "~"),
             Token::Hypen(_) => write!(f, "-"),
-            Token::HypenHypen(_) =>  write!(f,"--"),
-            Token::Plus(_) =>  write!(f,"+"),
-            Token::Star(_) =>  write!(f,"*"),
-            Token::Percent(_) =>  write!(f,"%"),
-            Token::Slash(_) =>  write!(f,"/"),
-            Token::Pipe(_) =>  write!(f,"|"),
-            Token::Caret(_) =>  write!(f,"^"),
-            Token::LeftShift(_) =>  write!(f,"<<"),
+            Token::HypenHypen(_) => write!(f, "--"),
+            Token::Plus(_) => write!(f, "+"),
+            Token::Star(_) => write!(f, "*"),
+            Token::Percent(_) => write!(f, "%"),
+            Token::Slash(_) => write!(f, "/"),
+            Token::Pipe(_) => write!(f, "|"),
+            Token::Caret(_) => write!(f, "^"),
+            Token::LeftShift(_) => write!(f, "<<"),
             Token::RightShift(_) => write!(f, ">>"),
-            Token::Ampersand(_) =>  write!(f,"&"),
-            Token::Exclamation(_) =>  write!(f,"!"),
-            Token::AmpersandAmpersand(_) =>  write!(f,"&&"),
-            Token::PipePipe(_) =>  write!(f,"||"),
-            Token::EqualEqual(_) =>  write!(f,"=="),
+            Token::Ampersand(_) => write!(f, "&"),
+            Token::Exclamation(_) => write!(f, "!"),
+            Token::AmpersandAmpersand(_) => write!(f, "&&"),
+            Token::PipePipe(_) => write!(f, "||"),
+            Token::EqualEqual(_) => write!(f, "=="),
             Token::ExclamationEqual(_) => write!(f, "!="),
-            Token::Less(_) =>     write!(f,"<"),
-            Token::Greater(_) =>  write!(f,">"),
+            Token::Less(_) => write!(f, "<"),
+            Token::Greater(_) => write!(f, ">"),
             Token::LessEqual(_) => write!(f, "<="),
             Token::GreaterEqual(_) => write!(f, ">="),
-            Token::Equal(_) =>  write!(f,"="),
-            Token::PlusEqual(_) =>  write!(f,"+="),
-            Token::HypenEqual(_) =>  write!(f,"-="),
-            Token::StarEqual(_) =>  write!(f,"*="),
-            Token::SlashEqual(_) =>  write!(f,"/="),
-            Token::PercentEqual(_) =>  write!(f,"%="),
-            Token::AmpersandEqual(_) =>  write!(f,"&="),
-            Token::PipeEqual(_) =>  write!(f,"|="),
-            Token::CaretEqual(_) =>  write!(f,"^="),
-            Token::LeftShiftEqual(_) =>  write!(f,"<<="),
-            Token::RightShiftEqual(_) =>  write!(f,">>="),
-            Token::PlusPlus(_) =>  write!(f,"++"),
+            Token::Equal(_) => write!(f, "="),
+            Token::PlusEqual(_) => write!(f, "+="),
+            Token::HypenEqual(_) => write!(f, "-="),
+            Token::StarEqual(_) => write!(f, "*="),
+            Token::SlashEqual(_) => write!(f, "/="),
+            Token::PercentEqual(_) => write!(f, "%="),
+            Token::AmpersandEqual(_) => write!(f, "&="),
+            Token::PipeEqual(_) => write!(f, "|="),
+            Token::CaretEqual(_) => write!(f, "^="),
+            Token::LeftShiftEqual(_) => write!(f, "<<="),
+            Token::RightShiftEqual(_) => write!(f, ">>="),
+            Token::PlusPlus(_) => write!(f, "++"),
         }
     }
 }

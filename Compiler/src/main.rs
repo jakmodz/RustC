@@ -62,7 +62,7 @@ fn main() {
                 code = 67;
             }
         }
-        eprintln!( " {}", e)
+        eprintln!(" {}", e)
     }
 
     exit(code);

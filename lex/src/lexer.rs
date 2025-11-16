@@ -160,7 +160,8 @@ impl Lexer {
             let matched = longest_match.unwrap();
 
             if matches!(matched.0, TokenType::Constant)
-                && let Some(next_char) = remaining[matched.1.len()..].chars().next() {
+                && let Some(next_char) = remaining[matched.1.len()..].chars().next()
+            {
                 if next_char.is_alphabetic() || next_char == '_' {
                     return Err(LexerError::InvalidToken(self.line, self.pos + 1, next_char));
                 }

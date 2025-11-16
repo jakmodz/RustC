@@ -1,5 +1,7 @@
 use lazy_static::lazy_static;
 use std::collections::HashMap;
+use std::fmt;
+use std::fmt::Formatter;
 
 lazy_static! {
     static ref OPERATOR_PRECEDENCE: HashMap<TokenType, usize> = {
@@ -200,53 +202,6 @@ impl Token {
         }
     }
 
-    pub fn to_string(&self) -> String {
-        match self {
-            Token::Identifier(str, _) => str.clone(),
-            Token::Constant(i, _) => i.to_string(),
-            Token::OpenParen(_) => "(".to_string(),
-            Token::CloseParen(_) => ")".to_string(),
-            Token::OpenBrace(_) => "{".to_string(),
-            Token::CloseBrace(_) => "}".to_string(),
-            Token::Semicolon(_) => ";".to_string(),
-            Token::Return(_) => "return".to_string(),
-            Token::Int(_) => "int".to_string(),
-            Token::Void(_) => "void".to_string(),
-            Token::Tilde(_) => "~".to_string(),
-            Token::Hypen(_) => "-".to_string(),
-            Token::HypenHypen(_) => "--".to_string(),
-            Token::Plus(_) => "+".to_string(),
-            Token::Star(_) => "*".to_string(),
-            Token::Percent(_) => "%".to_string(),
-            Token::Slash(_) => "/".to_string(),
-            Token::Pipe(_) => "|".to_string(),
-            Token::Caret(_) => "^".to_string(),
-            Token::LeftShift(_) => "<<".to_string(),
-            Token::RightShift(_) => ">>".to_string(),
-            Token::Ampersand(_) => "&".to_string(),
-            Token::Exclamation(_) => "!".to_string(),
-            Token::AmpersandAmpersand(_) => "&&".to_string(),
-            Token::PipePipe(_) => "||".to_string(),
-            Token::EqualEqual(_) => "==".to_string(),
-            Token::ExclamationEqual(_) => "!=".to_string(),
-            Token::Less(_) => "<".to_string(),
-            Token::Greater(_) => ">".to_string(),
-            Token::LessEqual(_) => "<=".to_string(),
-            Token::GreaterEqual(_) => ">=".to_string(),
-            Token::Equal(_) => "=".to_string(),
-            Token::PlusEqual(_) => "+=".to_string(),
-            Token::HypenEqual(_) => "-=".to_string(),
-            Token::StarEqual(_) => "*=".to_string(),
-            Token::SlashEqual(_) => "/=".to_string(),
-            Token::PercentEqual(_) => "%=".to_string(),
-            Token::AmpersandEqual(_) => "&=".to_string(),
-            Token::PipeEqual(_) => "|=".to_string(),
-            Token::CaretEqual(_) => "^=".to_string(),
-            Token::LeftShiftEqual(_) => "<<=".to_string(),
-            Token::RightShiftEqual(_) => ">>=".to_string(),
-            Token::PlusPlus(_) => "++".to_string(),
-        }
-    }
     pub fn span(&self) -> &Span {
         match self {
             Token::Identifier(_, span)
@@ -388,7 +343,7 @@ impl Token {
         }
     }
     pub fn is_binary_op(&self) -> bool {
-        match self.get_token_type() {
+        matches!( self.get_token_type(),
             TokenType::Hypen
             | TokenType::Plus
             | TokenType::Slash
@@ -407,13 +362,11 @@ impl Token {
             | TokenType::Greater
             | TokenType::LessEqual
             | TokenType::GreaterEqual
-            | TokenType::Equal => true,
-            _ => false,
-        }
+            | TokenType::Equal )
     }
     pub fn is_compound_assign(&self) -> bool {
-        match self.get_token_type() {
-            TokenType::PlusEqual
+        matches!( self.get_token_type(),
+            | TokenType::PlusEqual
             | TokenType::HypenEqual
             | TokenType::StarEqual
             | TokenType::SlashEqual
@@ -422,15 +375,64 @@ impl Token {
             | TokenType::PipeEqual
             | TokenType::CaretEqual
             | TokenType::LeftShiftEqual
-            | TokenType::RightShiftEqual => true,
-            _ => false,
-        }
+            | TokenType::RightShiftEqual)
     }
 
     pub fn get_precedence(&self) -> usize {
         if let Some(u) = OPERATOR_PRECEDENCE.get(&self.get_token_type()) {
-            return u.clone();
+            return *u;
         }
         0
+    }
+}
+
+
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Token::Identifier(str, _) =>write!(f, "{}", str),
+            Token::Constant(i, _) => write!(f, "{}", i),
+            Token::OpenParen(_) => write!(f, "("),
+            Token::CloseParen(_) =>write!(f, ")"),
+            Token::OpenBrace(_) => write!(f,"{{"),
+            Token::CloseBrace(_) =>write!(f, "}}"),
+            Token::Semicolon(_) => write!(f,";"),
+            Token::Return(_) =>  write!(f,"return"),
+            Token::Int(_) =>  write!(f,"int"),
+            Token::Void(_) =>  write!(f,"void"),
+            Token::Tilde(_) => write!(f, "~"),
+            Token::Hypen(_) => write!(f, "-"),
+            Token::HypenHypen(_) =>  write!(f,"--"),
+            Token::Plus(_) =>  write!(f,"+"),
+            Token::Star(_) =>  write!(f,"*"),
+            Token::Percent(_) =>  write!(f,"%"),
+            Token::Slash(_) =>  write!(f,"/"),
+            Token::Pipe(_) =>  write!(f,"|"),
+            Token::Caret(_) =>  write!(f,"^"),
+            Token::LeftShift(_) =>  write!(f,"<<"),
+            Token::RightShift(_) => write!(f, ">>"),
+            Token::Ampersand(_) =>  write!(f,"&"),
+            Token::Exclamation(_) =>  write!(f,"!"),
+            Token::AmpersandAmpersand(_) =>  write!(f,"&&"),
+            Token::PipePipe(_) =>  write!(f,"||"),
+            Token::EqualEqual(_) =>  write!(f,"=="),
+            Token::ExclamationEqual(_) => write!(f, "!="),
+            Token::Less(_) =>     write!(f,"<"),
+            Token::Greater(_) =>  write!(f,">"),
+            Token::LessEqual(_) => write!(f, "<="),
+            Token::GreaterEqual(_) => write!(f, ">="),
+            Token::Equal(_) =>  write!(f,"="),
+            Token::PlusEqual(_) =>  write!(f,"+="),
+            Token::HypenEqual(_) =>  write!(f,"-="),
+            Token::StarEqual(_) =>  write!(f,"*="),
+            Token::SlashEqual(_) =>  write!(f,"/="),
+            Token::PercentEqual(_) =>  write!(f,"%="),
+            Token::AmpersandEqual(_) =>  write!(f,"&="),
+            Token::PipeEqual(_) =>  write!(f,"|="),
+            Token::CaretEqual(_) =>  write!(f,"^="),
+            Token::LeftShiftEqual(_) =>  write!(f,"<<="),
+            Token::RightShiftEqual(_) =>  write!(f,">>="),
+            Token::PlusPlus(_) =>  write!(f,"++"),
+        }
     }
 }

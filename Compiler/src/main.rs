@@ -8,20 +8,20 @@ use semantic_analysis::SemanticAnalyzer;
 use semantic_analysis::SemanticError;
 use std::ffi::OsStr;
 use std::fs::File;
-use std::io::{Read, Write, stderr, stdout};
+use std::io::{Read, Write, stdout};
 use std::path::Path;
 use std::process::exit;
 use thiserror::Error;
 #[derive(Error, Debug)]
 enum CompilerError {
     #[error("IO Error: {0}")]
-    IoError(#[from] std::io::Error),
+    Io(#[from] std::io::Error),
     #[error("Lexer Error: {0}")]
-    LexerError(#[from] LexerError),
+    Lexer(#[from] LexerError),
     #[error("Parser Error: {0}")]
-    ParserError(#[from] ParserError),
+    Parser(#[from] ParserError),
     #[error("Semantic Error: {0}")]
-    SemanticError(#[from] SemanticError),
+    Semantic(#[from] SemanticError),
 }
 
 #[derive(clap::Parser, Debug)]
@@ -49,20 +49,20 @@ fn main() {
     let mut code = 0;
     if let Err(e) = run() {
         match e {
-            CompilerError::IoError(_) => {
+            CompilerError::Io(_) => {
                 code = 64;
             }
-            CompilerError::LexerError(_) => {
+            CompilerError::Lexer(_) => {
                 code = 65;
             }
-            CompilerError::ParserError(_) => {
+            CompilerError::Parser(_) => {
                 code = 66;
             }
-            CompilerError::SemanticError(_) => {
+            CompilerError::Semantic(_) => {
                 code = 67;
             }
         }
-        writeln!(stderr(), " {}", e).unwrap();
+        eprintln!( " {}", e)
     }
 
     exit(code);

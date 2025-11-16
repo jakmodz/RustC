@@ -166,3 +166,8 @@ impl AsmParser {
         }
     }
 }
+impl Default for AsmParser {
+    fn default() -> Self {
+        Self::new()
+    }
+}

@@ -202,7 +202,7 @@ impl AsmGenerator {
             Operand::Reg(r) => writeln!(
                 out,
                 "\tset{}\t{}",
-                convert_cond_code(&cond_code),
+                convert_cond_code(cond_code),
                 self.byte_reg(&r)
             ),
             _ => {
@@ -210,7 +210,7 @@ impl AsmGenerator {
                 writeln!(
                     out,
                     "\tset{}\t{}",
-                    convert_cond_code(&cond_code),
+                    convert_cond_code(cond_code),
                     self.byte_reg(&Register::R10)
                 )?;
                 self.write_mov(out, &Operand::Reg(Register::R10), &operand)

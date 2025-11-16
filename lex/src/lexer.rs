@@ -89,7 +89,7 @@ impl Lexer {
 
     fn skip_comments(&mut self, remaining: &mut String) -> bool {
         for c in SKIP_PATTERNS.iter() {
-            if let Some(mat) = c.find(&remaining) {
+            if let Some(mat) = c.find(remaining) {
                 let matched_text = mat.as_str();
                 if matched_text.ends_with('\n') {
                     self.new_line();
@@ -101,7 +101,7 @@ impl Lexer {
             }
         }
 
-        if let Some(mat) = MULIT_LINE_COMMENT.find(&remaining) {
+        if let Some(mat) = MULIT_LINE_COMMENT.find(remaining) {
             let mat_text = mat.as_str();
             for c in mat_text.chars() {
                 if c == '\n' {
@@ -159,14 +159,12 @@ impl Lexer {
 
             let matched = longest_match.unwrap();
 
-            if matches!(matched.0, TokenType::Constant) {
-                if let Some(next_char) = remaining[matched.1.len()..].chars().next() {
-                    if next_char.is_alphabetic() || next_char == '_' {
-                        return Err(LexerError::InvalidToken(self.line, self.pos + 1, next_char));
-                    }
+            if matches!(matched.0, TokenType::Constant)
+                && let Some(next_char) = remaining[matched.1.len()..].chars().next() {
+                if next_char.is_alphabetic() || next_char == '_' {
+                    return Err(LexerError::InvalidToken(self.line, self.pos + 1, next_char));
                 }
             }
-
             self.pos += matched.1.len();
             tokens.push(Token::create_token(
                 matched.0,
@@ -177,5 +175,10 @@ impl Lexer {
         }
 
         Ok(tokens)
+    }
+}
+impl Default for Lexer {
+    fn default() -> Self {
+        Self::new()
     }
 }

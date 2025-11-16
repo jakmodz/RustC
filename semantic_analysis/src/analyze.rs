@@ -104,6 +104,13 @@ impl SemanticAnalyzer {
                     right:Box::new(self.resolve_expression(right)?),
                 })
             }
+            Expression::CompoundAssign {op,var,expr}=>{
+                Ok(Expression::CompoundAssign {
+                    op: op.clone(),
+                    var: Box::new(self.resolve_expression(var)?),
+                    expr: Box::new(self.resolve_expression(expr)?),
+                })
+            }
             _=>{
                 Ok(expression.clone())
             }

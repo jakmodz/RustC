@@ -17,7 +17,6 @@ impl Parser{
         }
     }
 
-
     fn excepted_token(&mut self,expected:TokenType)->Result<(),ParserError>{
         if self.pos >= self.tokens.len(){
             return Err(ParserError::UnexpectedEOF);
@@ -159,7 +158,7 @@ impl Parser{
         }
         let mut left = self.parse_factor()?;
         let mut next_token = self.peek()?;
-        while next_token.is_binary_op() && next_token.get_precedence() >= min_precedence {
+        while (next_token.is_binary_op() || next_token.is_compound_assign()) && next_token.get_precedence() >= min_precedence {
             if next_token.get_token_type() == TokenType::Equal {
                 let op = self.eat()?;
                 let op_precedence = op.get_precedence();
@@ -168,7 +167,16 @@ impl Parser{
                     expr_to: Box::new(left),
                     initializer: Box::new(right),
                 };
-            }else {
+            }else if next_token.is_compound_assign() {
+                let op = self.eat()?;
+                let op_precedence = op.get_precedence();
+                left = Expression::CompoundAssign {
+                    op,
+                    var: Box::new(left),
+                    expr: Box::new(self.parse_expression(op_precedence)?),
+                };
+            }
+            else {
                 let operator = self.eat()?;
                 let op_precedence = operator.get_precedence();
                 let right = self.parse_expression(op_precedence + 1)?;
@@ -206,6 +214,7 @@ impl Parser{
                 })
             }
             Token::Identifier(name,_span)=>{
+
                 self.eat()?;
                 Ok(Expression::Var(name))
             }

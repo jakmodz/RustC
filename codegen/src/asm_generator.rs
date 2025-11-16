@@ -42,7 +42,7 @@ impl AsmGenerator {
         for instr in &function.instructions {
             self.write_instruction(out, instr)?;
             if matches!(instr,Instruction::Ret) {
-                break
+                break;
             }
         }
         Ok(())
@@ -102,7 +102,7 @@ impl AsmGenerator {
         match op {
             BinaryOpcode::Mul => self.write_mul(out, operand1, operand2),
             BinaryOpcode::Shl => self.write_shift(out, "shll", operand1, operand2),
-            BinaryOpcode::Shr => self.write_shift(out, "shrl", operand1, operand2),
+            BinaryOpcode::Shr => self.write_shift(out, "sarl", operand1, operand2),
             _ => {
                 let src = self.move_to_register_if_necessary(out, operand1, operand2)?;
                 let opr_1 = self.operand_str(&src);
@@ -131,28 +131,28 @@ impl AsmGenerator {
             _ => writeln!(out, "\timull\t{}, {}", self.operand_str(&src_op), self.operand_str(dst)),
         }
     }
-
     fn write_shift(&mut self, out: &mut dyn Write, op: &str, src: &Operand, dst: &Operand) -> Result<()> {
         match src {
             Operand::Imn(_) => writeln!(out, "\t{}\t{}, {}", op, self.operand_str(src), self.operand_str(dst)),
             _ => writeln!(out, "\tmovl\t{}, %ecx\n\t{}\t%cl, {}", self.operand_str(src), op, self.operand_str(dst)),
         }
     }
-
     fn write_cmp(&mut self, out: &mut dyn Write, operand1: &Operand, operand2: &Operand) -> Result<()> {
-        if !self.validate_operands(operand1, operand2) {
-            self.write_mov(out, operand1, &Operand::Reg(Register::R10))?;
-            if matches!(operand2, Operand::Stack(_) | Operand::Pseudo(_)) {
-                writeln!(out, "\tcmpl\t%r10d, {}", self.operand_str(operand2))?;
-            } else {
-                writeln!(out, "\tcmpl\t{}, %r10d", self.operand_str(operand2))?;
+        match (operand1, operand2) {
+            (Operand::Imn(_), Operand::Imn(_)) |
+            (Operand::Stack(_) | Operand::Pseudo(_), Operand::Stack(_) | Operand::Pseudo(_)) => {
+                self.write_mov(out, operand2, &Operand::Reg(Register::R10))?;
+                writeln!(out, "\tcmpl\t{}, %r10d", self.operand_str(operand1))
             }
-        } else {
-            writeln!(out, "\tcmpl\t{}, {}", self.operand_str(operand1), self.operand_str(operand2))?;
+            (Operand::Stack(_) | Operand::Pseudo(_), Operand::Reg(_))|(Operand::Imn(_), _)| (Operand::Reg(_), _) => {
+                writeln!(out, "\tcmpl\t{}, {}", self.operand_str(operand1), self.operand_str(operand2))
+            }
+            _ => {
+                self.write_mov(out, operand2, &Operand::Reg(Register::R10))?;
+                writeln!(out, "\tcmpl\t{}, %r10d", self.operand_str(operand1))
+            }
         }
-        Ok(())
     }
-
     fn write_setcc(&mut self, out: &mut dyn Write, cond_code:&ConditionCode, operand: Operand) -> Result<()> {
         match operand {
             Operand::Reg(r) => writeln!(out, "\tset{}\t{}", convert_cond_code(&cond_code), self.byte_reg(&r)),

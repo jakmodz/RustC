@@ -59,14 +59,22 @@ impl AsmParser {
 
             }
             TackyInstruction::Binary { binary_op, dst, src2, src1 } => {
-                instructions.push(Instruction::Mov {
-                    src: self.convert_val(src1.clone()),
-                    dst: self.convert_val(dst.clone()),
-                });
+
+                if src1 != dst {
+                    instructions.push(Instruction::Mov {
+                        src: self.convert_val(src1.clone()),
+                        dst: self.convert_val(dst.clone()),
+                    });
+                }
+
                 if binary_op.is_comparison() {
                     instructions.push(Instruction::Cmp {
-                        operand1:self.convert_val(src2.clone()),
-                        operand2:self.convert_val(dst.clone())
+                        operand1: self.convert_val(src2.clone()),
+                        operand2: self.convert_val(src1.clone())
+                    });
+                    instructions.push(Instruction::Mov {
+                        src: Operand::Imn(0),
+                        dst: self.convert_val(dst.clone()),
                     });
                     instructions.push(Instruction::SetCc {
                         cond_code: convert_condition_code(binary_op),
@@ -74,6 +82,7 @@ impl AsmParser {
                     });
                     return;
                 }
+
                 match binary_op {
                     BinaryOp::Divide => {
                         instructions.push(Instruction::Mov {
@@ -99,7 +108,6 @@ impl AsmParser {
                             dst: self.convert_val(dst),
                         });
                     }
-
                     _ => {
                         instructions.push(Instruction::Binary {
                             binary_op: convert_binary_op(binary_op),
@@ -107,9 +115,7 @@ impl AsmParser {
                             operand2: self.convert_val(dst),
                         })
                     }
-
                 }
-
             }
             TackyInstruction::JumpIfZero{target,cond} =>{
                 instructions.push(Instruction::Cmp {

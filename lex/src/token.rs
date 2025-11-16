@@ -24,6 +24,16 @@ lazy_static! {
         map.insert(TokenType::AmpersandAmpersand, 10);
         map.insert(TokenType::PipePipe, 5);
         map.insert(TokenType::Equal, 1);
+        map.insert(TokenType::PlusEqual,1);
+        map.insert(TokenType::HypenEqual,1);
+        map.insert(TokenType::StarEqual,1);
+        map.insert(TokenType::SlashEqual,1);
+        map.insert(TokenType::PercentEqual,1);
+        map.insert(TokenType::AmpersandEqual,1);
+        map.insert(TokenType::PipeEqual,1);
+        map.insert(TokenType::CaretEqual,1);
+        map.insert(TokenType::LeftShiftEqual,1);
+        map.insert(TokenType::RightShiftEqual,1);
         map
 
     };
@@ -78,6 +88,17 @@ pub enum TokenType {
     LessEqual,
     GreaterEqual,
     Equal,
+    PlusEqual,
+    HypenEqual,
+    StarEqual,
+    SlashEqual,
+    PercentEqual,
+    AmpersandEqual,
+    PipeEqual,
+    CaretEqual,
+    LeftShiftEqual,
+    RightShiftEqual,
+    PlusPlus,
 }
 
 
@@ -116,13 +137,23 @@ pub enum Token{
     Caret     (Span),
     LeftShift (Span),
     RightShift(Span),
-
+    Equal(Span),
+    PlusEqual(Span),
+    HypenEqual(Span),
+    StarEqual(Span),
+    SlashEqual(Span),
+    PercentEqual(Span),
+    AmpersandEqual(Span),
+    PipeEqual(Span),
+    CaretEqual(Span),
+    LeftShiftEqual(Span),
+    RightShiftEqual(Span),
+    PlusPlus(Span),
 
     //Keywords
     Return(Span),
     //types
     Int(Span),Void(Span),
-    Equal(Span),
 
 }
 
@@ -161,6 +192,17 @@ impl Token{
             Token::LessEqual(_)=>TokenType::LessEqual,
             Token::GreaterEqual(_)=>TokenType::GreaterEqual,
             Token::Equal(_)=>TokenType::Equal,
+            Token::PlusEqual(_) => TokenType::PlusEqual,
+            Token::HypenEqual(_) => TokenType::HypenEqual,
+            Token::StarEqual(_) => TokenType::StarEqual,
+            Token::SlashEqual(_) => TokenType::SlashEqual,
+            Token::PercentEqual(_) => TokenType::PercentEqual,
+            Token::AmpersandEqual(_) => TokenType::AmpersandEqual,
+            Token::PipeEqual(_) => TokenType::PipeEqual,
+            Token::CaretEqual(_) => TokenType::CaretEqual,
+            Token::LeftShiftEqual(_) => TokenType::LeftShiftEqual,
+            Token::RightShiftEqual(_) => TokenType::RightShiftEqual,
+            Token::PlusPlus(_) => TokenType::PlusPlus,
         }
     }
 
@@ -198,7 +240,17 @@ impl Token{
             Token::LessEqual(_)=>"<=".to_string(),
             Token::GreaterEqual(_)=>">=".to_string(),
             Token::Equal(_)=>"=".to_string(),
-
+            Token::PlusEqual(_) => "+=".to_string(),
+            Token::HypenEqual(_) => "-=".to_string(),
+            Token::StarEqual(_) => "*=".to_string(),
+            Token::SlashEqual(_) => "/=".to_string(),
+            Token::PercentEqual(_) => "%=".to_string(),
+            Token::AmpersandEqual(_) => "&=".to_string(),
+            Token::PipeEqual(_) => "|=".to_string(),
+            Token::CaretEqual(_) => "^=".to_string(),
+            Token::LeftShiftEqual(_) => "<<=".to_string(),
+            Token::RightShiftEqual(_) => ">>=".to_string(),
+            Token::PlusPlus(_) => "++".to_string(),
         }
     }
     pub fn span(&self) -> &Span {
@@ -235,6 +287,17 @@ impl Token{
             Token::Exclamation(span) |
             Token::Void(span)=> span,
             Token::Equal(span)=> span,
+            Token::PlusEqual(span) |
+            Token::HypenEqual(span) |
+            Token::StarEqual(span) |
+            Token::SlashEqual(span) |
+            Token::PercentEqual(span) |
+            Token::AmpersandEqual(span) |
+            Token::PipeEqual(span) |
+            Token::CaretEqual(span) |
+            Token::LeftShiftEqual(span) |
+            Token::RightShiftEqual(span) |
+            Token::PlusPlus(span) => span,
         }
     }
     pub fn from_string(s: &str) -> Option<TokenType> {
@@ -269,6 +332,17 @@ impl Token{
             "<="=> Some(TokenType::LessEqual),
             ">="=> Some(TokenType::GreaterEqual),
             "="=> Some(TokenType::Equal),
+            "+=" => Some(TokenType::PlusEqual),
+            "-=" => Some(TokenType::HypenEqual),
+            "*=" => Some(TokenType::StarEqual),
+            "/=" => Some(TokenType::SlashEqual),
+            "%=" => Some(TokenType::PercentEqual),
+            "&=" => Some(TokenType::AmpersandEqual),
+            "|=" => Some(TokenType::PipeEqual),
+            "^=" => Some(TokenType::CaretEqual),
+            "<<=" => Some(TokenType::LeftShiftEqual),
+            ">>=" => Some(TokenType::RightShiftEqual),
+            "++" => Some(TokenType::PlusPlus),
             _ => None,
         }
     }
@@ -306,6 +380,17 @@ impl Token{
             TokenType::LessEqual =>{Token::LessEqual(span)}
             TokenType::GreaterEqual=>{Token::GreaterEqual(span)}
             TokenType::Equal =>{Token::Equal(span)}
+            TokenType::PlusEqual => Token::PlusEqual(span),
+            TokenType::HypenEqual => Token::HypenEqual(span),
+            TokenType::StarEqual => Token::StarEqual(span),
+            TokenType::SlashEqual => Token::SlashEqual(span),
+            TokenType::PercentEqual => Token::PercentEqual(span),
+            TokenType::AmpersandEqual => Token::AmpersandEqual(span),
+            TokenType::PipeEqual => Token::PipeEqual(span),
+            TokenType::CaretEqual => Token::CaretEqual(span),
+            TokenType::LeftShiftEqual => Token::LeftShiftEqual(span),
+            TokenType::RightShiftEqual => Token::RightShiftEqual(span),
+            TokenType::PlusPlus => Token::PlusPlus(span),
         }
     }
     pub fn is_binary_op(&self) -> bool {
@@ -317,6 +402,21 @@ impl Token{
             TokenType::EqualEqual | TokenType::ExclamationEqual| TokenType::Less|
             TokenType::Greater| TokenType::LessEqual| TokenType::GreaterEqual|
             TokenType::Equal => true,
+            _ => false
+        }
+    }
+    pub fn is_compound_assign(&self) -> bool {
+        match self.get_token_type() {
+            TokenType::PlusEqual |
+            TokenType::HypenEqual |
+            TokenType::StarEqual |
+            TokenType::SlashEqual |
+            TokenType::PercentEqual |
+            TokenType::AmpersandEqual |
+            TokenType::PipeEqual |
+            TokenType::CaretEqual |
+            TokenType::LeftShiftEqual |
+            TokenType::RightShiftEqual => true,
             _ => false
         }
     }

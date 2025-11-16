@@ -76,9 +76,7 @@ impl TackyParser {
             ast::ast::Stmt::Expression { expr } => {
                 self.convert_expr(expr,body);
             }
-            ast::ast::Stmt::Null => {
-
-            }
+            ast::ast::Stmt::Null => {}
             ast::ast::Stmt::If { .. } => {todo!()}
 
         }
@@ -98,6 +96,37 @@ impl TackyParser {
                     _ => unreachable!()
                 }
             }
+            ast::ast::Expression::CompoundAssign {op, var, expr} => {
+                let rhs = self.convert_expr(*expr, instructions);
+                let binary_op = match op.get_token_type() {
+                    TokenType::PlusEqual => BinaryOp::Add,
+                    TokenType::StarEqual => BinaryOp::Multiply,
+                    TokenType::HypenEqual => BinaryOp::Subtract,
+                    TokenType::SlashEqual => BinaryOp::Divide,
+                    TokenType::PercentEqual => BinaryOp::Modulo,
+                    TokenType::LeftShiftEqual => BinaryOp::LeftShift,
+                    TokenType::RightShiftEqual => BinaryOp::RightShift,
+                    TokenType::AmpersandEqual => BinaryOp::And,
+                    TokenType::CaretEqual => BinaryOp::Xor,
+                    TokenType::PipeEqual => BinaryOp::Or,
+                    _ => panic!("Unsupported compound assignment"),
+                };
+                let name = match var.as_ref() {
+                    ast::ast::Expression::Var(name) => name.clone(),
+                    _ => panic!("Compound assignment target must be a variable"),
+                };
+
+                let lhs = Val::Var(name.clone());
+
+                instructions.push(TackyInstruction::Binary {
+                    binary_op,
+                    src1: lhs.clone(),
+                    src2: rhs,
+                    dst: lhs.clone(),
+                });
+
+                lhs
+            },
             ast::ast::Expression::Var(name) => {
                 Val::Var(name)
             },

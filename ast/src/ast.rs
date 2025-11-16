@@ -35,4 +35,5 @@ pub enum  Expression{
     Grouping{expr:Box<Expression>},
     Binary {op:Token, left: Box<Expression>, right: Box<Expression> },
     Assignment{expr_to: Box<Expression>,initializer:Box<Expression>},
+    CompoundAssign{op:Token,var:Box<Expression>,expr:Box<Expression>},
 }

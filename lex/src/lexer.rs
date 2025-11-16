@@ -7,9 +7,20 @@ lazy_static! {
     static ref PATTERNS: Vec<(Regex, TokenType)> = {
         vec![
             // Multi-character operators MUST come first!
+            (Regex::new(r"^<<=").unwrap(), TokenType::LeftShiftEqual),
+            (Regex::new(r"^>>=").unwrap(), TokenType::RightShiftEqual),
             (Regex::new(r"^<<").unwrap(), TokenType::LeftShift),
             (Regex::new(r"^>>").unwrap(), TokenType::RightShift),
+            (Regex::new(r"^\+\+").unwrap(), TokenType::PlusPlus),
             (Regex::new(r"^--").unwrap(), TokenType::HypenHypen),
+            (Regex::new(r"^\+=").unwrap(), TokenType::PlusEqual),
+            (Regex::new(r"^-=").unwrap(), TokenType::HypenEqual),
+            (Regex::new(r"^\*=").unwrap(), TokenType::StarEqual),
+            (Regex::new(r"^/=").unwrap(), TokenType::SlashEqual),
+            (Regex::new(r"^%=").unwrap(), TokenType::PercentEqual),
+            (Regex::new(r"^&=").unwrap(), TokenType::AmpersandEqual),
+            (Regex::new(r"^\|=").unwrap(), TokenType::PipeEqual),
+            (Regex::new(r"^\^=").unwrap(), TokenType::CaretEqual),
             (Regex::new(r"^&&").unwrap(), TokenType::AmpersandAmpersand),
             (Regex::new(r"^\|\|").unwrap(), TokenType::PipePipe),
             (Regex::new(r"^==").unwrap(), TokenType::EqualEqual),

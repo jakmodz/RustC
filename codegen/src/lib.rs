@@ -14,10 +14,9 @@ mod tests {
     fn test_asm_gen() -> std::io::Result<()> {
         let source = String::from(
             "
+
 int main(void) {
-    int a = 0;
-    0 || (a = 1);
-    return a;
+    return -5 >> 30;
 }"
         );
         let mut lexer = lex::lexer::Lexer::new();
@@ -26,7 +25,7 @@ int main(void) {
         let mut ast = parser.parse().unwrap();
         let mut analyzer = SemanticAnalyzer::new();
         analyzer.semantic_analysis(&mut ast).unwrap();
-        println!("{:#?}", ast);
+       // println!("{:#?}", ast);
         let tacky = tacky_parser::TackyParser::new(analyzer.var_count).emit_tacky(ast);
         println!("{:#?}", tacky);
         let asm_ast = AsmParser::new().parse(tacky);

@@ -13,8 +13,11 @@ mod tests {
     #[test]
     fn test_asm_gen() -> std::io::Result<()> {
         let source = String::from(
-            "int main(void) {
-    return -a;
+            "
+int main(void) {
+    int a = 0;
+    0 || (a = 1);
+    return a;
 }"
         );
         let mut lexer = lex::lexer::Lexer::new();

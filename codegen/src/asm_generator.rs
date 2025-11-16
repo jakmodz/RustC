@@ -41,6 +41,9 @@ impl AsmGenerator {
 
         for instr in &function.instructions {
             self.write_instruction(out, instr)?;
+            if matches!(instr,Instruction::Ret) {
+                break
+            }
         }
         Ok(())
     }

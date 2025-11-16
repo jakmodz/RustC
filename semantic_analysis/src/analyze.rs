@@ -39,7 +39,7 @@ impl SemanticAnalyzer {
                 if self.variables.contains_key(var_name) {
                     return Err(SemanticError::MultipleDeclaration {var_name:var_name.to_string()});
                 }
-                let unique_name = format!("{}_{}",var_name,self.var_count);
+                let unique_name = format!("{}.{}",var_name,self.var_count);
                 self.var_count += 1;
                 self.variables.insert(var_name.to_string(),unique_name.clone());
                 let mut init = initializer.clone();
@@ -93,6 +93,9 @@ impl SemanticAnalyzer {
                 }else{
                     Err(SemanticError::UndeclaredVariable {var_name:var_name.to_string()})
                 }
+            }
+            Expression::Grouping {expr  }=>{
+                Ok(Expression::Grouping {expr:Box::new(self.resolve_expression(expr)?)})
             }
             Expression::Binary {op,left,right}=>{
                 Ok(Expression::Binary {

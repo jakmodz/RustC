@@ -16,8 +16,9 @@ impl TackyParser {
             label_counter:0
         }
     }
-    fn make_temporary(&mut self) -> String {
-        let s = format!("tmp{}", self.var_counter);
+    fn
+    make_temporary(&mut self) -> String {
+        let s = format!("tmp.{}", self.var_counter);
         self.var_counter += 1;
         s
     }
@@ -33,9 +34,9 @@ impl TackyParser {
         let mut body = Vec::new();
 
         for element in ast.function.body {
-                self.convert_block_element(element, &mut body);
+        self.convert_block_element(element, &mut body);
         }
-
+        body.push(TackyInstruction::Return(Constant(0)));
         tacky::Program {
             function:TackyFunction{
                 name:ast.function.name,
@@ -48,9 +49,21 @@ impl TackyParser {
             ast::ast::BlockElement::Stmt(stmt) => {
                 self.convert_stmt(stmt,body);
             }
-            ast::ast::BlockElement::Declaration(_) => {
-
-                todo!()
+            ast::ast::BlockElement::Declaration(decl) => {
+                self.convert_declaration(decl,body);
+            }
+        }
+    }
+    fn convert_declaration(&mut self, decl:ast::ast::Declaration, body:&mut Vec<tacky::TackyInstruction>) {
+        match decl {
+            ast::ast::Declaration::DefineVar { var_name, initializer } => {
+                if let Some(init_expr) = initializer {
+                    let val = self.convert_expr(init_expr,body);
+                    body.push(tacky::TackyInstruction::Copy{
+                        src:val,
+                        dst:Val::Var(var_name)
+                    });
+                }
             }
         }
     }
@@ -60,17 +73,33 @@ impl TackyParser {
                 let val = self.convert_expr(expr,body);
                 body.push(tacky::TackyInstruction::Return(val));
             }
+            ast::ast::Stmt::Expression { expr } => {
+                self.convert_expr(expr,body);
+            }
+            ast::ast::Stmt::Null => {
+
+            }
             ast::ast::Stmt::If { .. } => {todo!()}
-            _=>todo!()
+
         }
     }
     fn convert_expr(&mut self, expr:ast::ast::Expression,instructions:&mut Vec<TackyInstruction>)->tacky::Val {
         match expr {
             ast::ast::Expression::Assignment {expr_to,initializer} => {
-                todo!()
+                let result = self.convert_expr(*initializer,instructions);
+                match expr_to.as_ref() {
+                    ast::ast::Expression::Var(name) => {
+                        instructions.push(TackyInstruction::Copy{
+                            src:result,
+                            dst:Val::Var(name.clone())
+                        });
+                        Val::Var(name.clone())
+                    }
+                    _ => unreachable!()
+                }
             }
             ast::ast::Expression::Var(name) => {
-                todo!()
+                Val::Var(name)
             },
 
             ast::ast::Expression::Constant(c) => {
@@ -148,15 +177,15 @@ impl TackyParser {
                         let end_label = format!("or_end_{}", self.label_counter);
                         self.label_counter += 1;
 
-                        let v1 = self.convert_expr(*left, instructions);
+                        let v2 = self.convert_expr(*left, instructions);
                         instructions.push(TackyInstruction::JumpIfNotZero {
-                            cond: v1,
+                            cond: v2,
                             target: true_label.clone()
                         });
 
-                        let v2 = self.convert_expr(*right, instructions);
+                        let v1 = self.convert_expr(*right, instructions);
                         instructions.push(TackyInstruction::JumpIfNotZero {
-                            cond: v2,
+                            cond: v1,
                             target: true_label.clone()
                         });
 

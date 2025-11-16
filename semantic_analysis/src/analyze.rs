@@ -73,7 +73,7 @@ impl SemanticAnalyzer {
         match expression  {
             Expression::Assignment {expr_to,initializer}=>{
                 match expr_to.as_ref()  {
-                    Expression::Var(var_name)=>{
+                    Expression::Var(_var_name)=>{
                          Ok(Expression::Assignment {
                              expr_to: Box::new(self.resolve_expression(expr_to)?),
                              initializer: Box::new(self.resolve_expression(initializer)?),

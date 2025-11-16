@@ -36,4 +36,6 @@ pub enum  Expression{
     Binary {op:Token, left: Box<Expression>, right: Box<Expression> },
     Assignment{expr_to: Box<Expression>,initializer:Box<Expression>},
     CompoundAssign{op:Token,var:Box<Expression>,expr:Box<Expression>},
+    Increment{expr:Box<Expression>,pre:bool},
+    Decrement{expr:Box<Expression>,pre:bool},
 }

@@ -36,7 +36,7 @@ impl Parser{
         }
         Ok(())
     }
-   
+
     fn peek(&mut self,)->Result<Token,ParserError>{
         if self.pos >= self.tokens.len(){
             return Err(ParserError::UnexpectedEOF);
@@ -158,6 +158,35 @@ impl Parser{
         }
         let mut left = self.parse_factor()?;
         let mut next_token = self.peek()?;
+        if next_token.get_token_type() == TokenType::PlusPlus {
+
+            if !matches!(left, Expression::Var(_)) {
+                return Err(ParserError::InvalidLValue(
+                    next_token.span().line,
+                    next_token.span().column,
+                    "Postfix ++ requires an lvalue".to_string()
+                ));
+            }
+            self.eat()?;
+            left = Expression::Increment {
+                expr: Box::new(left),
+                pre: false
+            };
+        } else if next_token.get_token_type() == TokenType::HypenHypen {
+            if !matches!(left, Expression::Var(_)) {
+                return Err(ParserError::InvalidLValue(
+                    next_token.span().line,
+                    next_token.span().column,
+                    "Postfix -- requires an lvalue".to_string()
+                ));
+            }
+            self.eat()?;
+            left = Expression::Decrement {
+                expr: Box::new(left),
+                pre: false
+            };
+        }
+        next_token = self.peek()?;
         while (next_token.is_binary_op() || next_token.is_compound_assign()) && next_token.get_precedence() >= min_precedence {
             if next_token.get_token_type() == TokenType::Equal {
                 let op = self.eat()?;
@@ -192,41 +221,83 @@ impl Parser{
             return Err(ParserError::UnexpectedEOF);
         }
         let next_token =self.peek()?;
-        match next_token {
+        let mut result = match next_token {
             Token::Constant(value, _span)=>{
                 self.eat()?;
-                Ok(Expression::Constant(value))
+                Expression::Constant(value)
             },
             Token::OpenParen(_) => {
                 self.eat()?;
-                let expr = self.parse_expression(next_token.get_precedence())?;
+                let expr = self.parse_expression(0)?;
                 self.excepted_token(TokenType::CloseParen)?;
-                Ok(Expression::Grouping{
-                    expr:Box::new(expr)
-                })
+                expr
             }
             Token::Hypen(_)| Token::Tilde(_)| Token::Exclamation(_)=>{
                 let op = self.eat()?;
                 let expr = self.parse_factor()?;
-                Ok(Expression::UnaryOP{
+                Expression::UnaryOP{
                     op,
                     expr:Box::new(expr)
-                })
+                }
             }
             Token::Identifier(name,_span)=>{
-
                 self.eat()?;
-                Ok(Expression::Var(name))
+                Expression::Var(name)
+            }
+            Token::PlusPlus(_) => {
+                self.eat()?;
+                let expr = self.parse_factor()?;
+                Expression::Increment {
+                    expr: Box::new(expr),
+                    pre: true
+                }
+            }
+            Token::HypenHypen(_) => {
+                self.eat()?;
+                let expr = self.parse_factor()?;
+                Expression::Decrement {
+                    expr: Box::new(expr),
+                    pre: true
+                }
             }
             _=>{
                 let current_token = self.peek()?;
-                Err(ParserError::UnexpectedToken(current_token.span().line,current_token.span().column,
-                        format!("{:?}", current_token.get_token_type())))
+                return Err(ParserError::UnexpectedToken(current_token.span().line,current_token.span().column,
+                                                        format!("{:?}", current_token.get_token_type())));
+            }
+        };
+        loop {
+            let next = self.peek()?;
+            if next.get_token_type() == TokenType::PlusPlus {
+                if !matches!(result, Expression::Var(_)) {
+                    return Err(ParserError::InvalidLValue(
+                        next.span().line,
+                        next.span().column,
+                        "Postfix ++ requires an lvalue".to_string()
+                    ));
+                }
+                self.eat()?;
+                result = Expression::Increment {
+                    expr: Box::new(result),
+                    pre: false
+                };
+            } else if next.get_token_type() == TokenType::HypenHypen {
+                if !matches!(result, Expression::Var(_)) {
+                    return Err(ParserError::InvalidLValue(
+                        next.span().line,
+                        next.span().column,
+                        "Postfix -- requires an lvalue".to_string()
+                    ));
+                }
+                self.eat()?;
+                result = Expression::Decrement {
+                    expr: Box::new(result),
+                    pre: false
+                };
+            } else {
+                break;
             }
         }
+        Ok(result)
     }
-    
-
 }
-
-

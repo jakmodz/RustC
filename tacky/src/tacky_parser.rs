@@ -1,7 +1,7 @@
 use crate::tacky;
 use crate::tacky::Val::Constant;
 use crate::tacky::{BinaryOp, TackyFunction, TackyInstruction, Val};
-use ast::ast::Program;
+use ast::ast::{Expression, Program};
 use lex::token::TokenType;
 
 pub struct TackyParser {
@@ -130,7 +130,12 @@ impl TackyParser {
             ast::ast::Expression::Var(name) => {
                 Val::Var(name)
             },
-
+            ast::ast::Expression::Increment {expr,pre}=>{
+                self.convert_inc_dec(expr,instructions,pre,BinaryOp::Add)
+            }
+            ast::ast::Expression::Decrement {expr,pre}=>{
+                self.convert_inc_dec(expr,instructions,pre,BinaryOp::Subtract)
+            }
             ast::ast::Expression::Constant(c) => {
                 tacky::Val::Constant(c)
             }
@@ -272,6 +277,49 @@ impl TackyParser {
                 });
                 dst
             }
+        }
+    }
+    fn convert_inc_dec(
+        &mut self,
+        expr: Box<Expression>,
+        instructions: &mut Vec<TackyInstruction>,
+        pre: bool,
+        binary_op: BinaryOp
+    ) -> Val {
+        let var_name = self.get_var_name(&expr)
+            .unwrap_or_else(|| panic!("Increment/decrement operator requires an lvalue"));
+        let var = Val::Var(var_name);
+        if pre {
+            instructions.push(TackyInstruction::Binary {
+                binary_op,
+                src1: var.clone(),
+                src2: Constant(1),
+                dst: var.clone(),
+            });
+            var
+        } else {
+            let tmp = Val::Var(self.make_temporary());
+
+            instructions.push(TackyInstruction::Copy {
+                src: var.clone(),
+                dst: tmp.clone(),
+            });
+
+            instructions.push(TackyInstruction::Binary {
+                binary_op,
+                src1: var.clone(),
+                src2: Constant(1),
+                dst: var.clone(),
+            });
+
+            tmp
+        }
+    }
+    fn get_var_name(&mut self,expr: &Expression) -> Option<String> {
+        match expr {
+            ast::ast::Expression::Grouping { expr } => self.get_var_name(expr),
+            ast::ast::Expression::Var(name) => Some(name.clone()),
+            _ => None,
         }
     }
 }

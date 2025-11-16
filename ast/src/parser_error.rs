@@ -11,5 +11,7 @@ pub enum ParserError{
     #[error("Unexpected end of file")]
     UnexpectedEOF,
     #[error("Unknown parsing error")]
-    UnknownError
+    UnknownError,
+    #[error("Invalid lvalue at line {0}, column {1}: {2}")]
+    InvalidLValue(usize, usize, String)
 }

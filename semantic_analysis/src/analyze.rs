@@ -84,6 +84,12 @@ impl SemanticAnalyzer {
                     }
                 }
             }
+            Expression::Decrement {pre,expr}=>{
+                Ok(Expression::Decrement {pre: *pre,expr:Box::new(self.resolve_expression(expr)?)})
+            }
+            Expression::Increment {expr,pre}=>{
+                Ok(Expression::Increment {pre: *pre,expr:Box::new(self.resolve_expression(expr)?)})
+            }
             Expression::UnaryOP {expr,op}=>{
                 Ok(Expression::UnaryOP {op: op.clone(),expr:Box::new(self.resolve_expression(expr)?)})
             }

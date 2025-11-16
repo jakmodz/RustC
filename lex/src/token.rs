@@ -5,11 +5,11 @@ lazy_static! {
     static ref OPERATOR_PRECEDENCE: HashMap<TokenType, usize> = {
         let mut map = HashMap::new();
 
-        map.insert(TokenType::Percent,50);
-        map.insert(TokenType::Star,50);
-        map.insert(TokenType::Slash,50);
-        map.insert(TokenType::Plus,45);
-        map.insert(TokenType::Hypen,45);
+        map.insert(TokenType::Percent, 50);
+        map.insert(TokenType::Star, 50);
+        map.insert(TokenType::Slash, 50);
+        map.insert(TokenType::Plus, 45);
+        map.insert(TokenType::Hypen, 45);
         map.insert(TokenType::LeftShift, 40);
         map.insert(TokenType::RightShift, 40);
         map.insert(TokenType::Less, 35);
@@ -24,37 +24,32 @@ lazy_static! {
         map.insert(TokenType::AmpersandAmpersand, 10);
         map.insert(TokenType::PipePipe, 5);
         map.insert(TokenType::Equal, 1);
-        map.insert(TokenType::PlusEqual,1);
-        map.insert(TokenType::HypenEqual,1);
-        map.insert(TokenType::StarEqual,1);
-        map.insert(TokenType::SlashEqual,1);
-        map.insert(TokenType::PercentEqual,1);
-        map.insert(TokenType::AmpersandEqual,1);
-        map.insert(TokenType::PipeEqual,1);
-        map.insert(TokenType::CaretEqual,1);
-        map.insert(TokenType::LeftShiftEqual,1);
-        map.insert(TokenType::RightShiftEqual,1);
+        map.insert(TokenType::PlusEqual, 1);
+        map.insert(TokenType::HypenEqual, 1);
+        map.insert(TokenType::StarEqual, 1);
+        map.insert(TokenType::SlashEqual, 1);
+        map.insert(TokenType::PercentEqual, 1);
+        map.insert(TokenType::AmpersandEqual, 1);
+        map.insert(TokenType::PipeEqual, 1);
+        map.insert(TokenType::CaretEqual, 1);
+        map.insert(TokenType::LeftShiftEqual, 1);
+        map.insert(TokenType::RightShiftEqual, 1);
         map
-
     };
 }
-#[derive(PartialEq,Debug,Clone)]
-pub struct Span{
-    pub column:usize,
-    pub line:usize
+#[derive(PartialEq, Debug, Clone)]
+pub struct Span {
+    pub column: usize,
+    pub line: usize,
 }
 
-impl Span{
-    pub fn new(column:usize,line:usize)->Self{
-        Self{
-            column,
-            line
-        }
+impl Span {
+    pub fn new(column: usize, line: usize) -> Self {
+        Self { column, line }
     }
 }
 
-#[derive(Debug,Clone,PartialEq,Eq)]
-#[derive(Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TokenType {
     Identifier,
     Constant,
@@ -101,17 +96,16 @@ pub enum TokenType {
     PlusPlus,
 }
 
-
-#[derive(Clone,Debug)]
-#[derive(PartialEq)]
-pub enum Token{
-
-    Identifier(String,Span),
-    Constant(i64,Span),
+#[derive(Clone, Debug, PartialEq)]
+pub enum Token {
+    Identifier(String, Span),
+    Constant(i64, Span),
 
     //
-    OpenParen(Span),CloseParen(Span),
-    OpenBrace(Span),CloseBrace(Span),
+    OpenParen(Span),
+    CloseParen(Span),
+    OpenBrace(Span),
+    CloseBrace(Span),
     Semicolon(Span),
     Tilde(Span),
     Hypen(Span),
@@ -132,10 +126,10 @@ pub enum Token{
     Plus(Span),
     Slash(Span),
     Percent(Span),
-    Pipe      (Span),
-    Ampersand (Span),
-    Caret     (Span),
-    LeftShift (Span),
+    Pipe(Span),
+    Ampersand(Span),
+    Caret(Span),
+    LeftShift(Span),
     RightShift(Span),
     Equal(Span),
     PlusEqual(Span),
@@ -153,11 +147,11 @@ pub enum Token{
     //Keywords
     Return(Span),
     //types
-    Int(Span),Void(Span),
-
+    Int(Span),
+    Void(Span),
 }
 
-impl Token{
+impl Token {
     pub fn get_token_type(&self) -> TokenType {
         match self {
             Token::Identifier(_, _) => TokenType::Identifier,
@@ -177,21 +171,21 @@ impl Token{
             Token::Star(_) => TokenType::Star,
             Token::Percent(_) => TokenType::Percent,
             Token::Slash(_) => TokenType::Slash,
-            Token::Pipe      (_) => TokenType::Pipe,
-            Token::Ampersand (_) => TokenType::Ampersand,
-            Token::Caret     (_) => TokenType::Caret,
-            Token::LeftShift (_) => TokenType::LeftShift,
+            Token::Pipe(_) => TokenType::Pipe,
+            Token::Ampersand(_) => TokenType::Ampersand,
+            Token::Caret(_) => TokenType::Caret,
+            Token::LeftShift(_) => TokenType::LeftShift,
             Token::RightShift(_) => TokenType::RightShift,
-            Token::Exclamation(_)=>TokenType::Exclamation,
-            Token::AmpersandAmpersand(_)=>TokenType::AmpersandAmpersand,
-            Token::PipePipe(_)=>TokenType::PipePipe,
-            Token::EqualEqual(_)=>TokenType::EqualEqual,
-            Token::ExclamationEqual(_)=>TokenType::ExclamationEqual,
-            Token::Less(_)=>TokenType::Less,
-            Token::Greater(_)=>TokenType::Greater,
-            Token::LessEqual(_)=>TokenType::LessEqual,
-            Token::GreaterEqual(_)=>TokenType::GreaterEqual,
-            Token::Equal(_)=>TokenType::Equal,
+            Token::Exclamation(_) => TokenType::Exclamation,
+            Token::AmpersandAmpersand(_) => TokenType::AmpersandAmpersand,
+            Token::PipePipe(_) => TokenType::PipePipe,
+            Token::EqualEqual(_) => TokenType::EqualEqual,
+            Token::ExclamationEqual(_) => TokenType::ExclamationEqual,
+            Token::Less(_) => TokenType::Less,
+            Token::Greater(_) => TokenType::Greater,
+            Token::LessEqual(_) => TokenType::LessEqual,
+            Token::GreaterEqual(_) => TokenType::GreaterEqual,
+            Token::Equal(_) => TokenType::Equal,
             Token::PlusEqual(_) => TokenType::PlusEqual,
             Token::HypenEqual(_) => TokenType::HypenEqual,
             Token::StarEqual(_) => TokenType::StarEqual,
@@ -208,16 +202,16 @@ impl Token{
 
     pub fn to_string(&self) -> String {
         match self {
-            Token::Identifier(str,_) => str.clone(),
-            Token::Constant(i,_) => i.to_string(),
+            Token::Identifier(str, _) => str.clone(),
+            Token::Constant(i, _) => i.to_string(),
             Token::OpenParen(_) => "(".to_string(),
             Token::CloseParen(_) => ")".to_string(),
-            Token::OpenBrace (_)=> "{".to_string(),
-            Token::CloseBrace (_)=> "}".to_string(),
+            Token::OpenBrace(_) => "{".to_string(),
+            Token::CloseBrace(_) => "}".to_string(),
             Token::Semicolon(_) => ";".to_string(),
             Token::Return(_) => "return".to_string(),
-            Token::Int (_)=> "int".to_string(),
-            Token::Void (_)=> "void".to_string(),
+            Token::Int(_) => "int".to_string(),
+            Token::Void(_) => "void".to_string(),
             Token::Tilde(_) => "~".to_string(),
             Token::Hypen(_) => "-".to_string(),
             Token::HypenHypen(_) => "--".to_string(),
@@ -225,21 +219,21 @@ impl Token{
             Token::Star(_) => "*".to_string(),
             Token::Percent(_) => "%".to_string(),
             Token::Slash(_) => "/".to_string(),
-            Token::Pipe      (_) => "|".to_string(),
-            Token::Caret     (_) => "^".to_string(),
-            Token::LeftShift (_) =>"<<".to_string(),
+            Token::Pipe(_) => "|".to_string(),
+            Token::Caret(_) => "^".to_string(),
+            Token::LeftShift(_) => "<<".to_string(),
             Token::RightShift(_) => ">>".to_string(),
             Token::Ampersand(_) => "&".to_string(),
             Token::Exclamation(_) => "!".to_string(),
-            Token::AmpersandAmpersand(_)=>"&&".to_string(),
-            Token::PipePipe(_)=>"||".to_string(),
-            Token::EqualEqual(_)=>"==".to_string(),
-            Token::ExclamationEqual(_)=>"!=".to_string(),
-            Token::Less(_)=>"<".to_string(),
-            Token::Greater(_)=>">".to_string(),
-            Token::LessEqual(_)=>"<=".to_string(),
-            Token::GreaterEqual(_)=>">=".to_string(),
-            Token::Equal(_)=>"=".to_string(),
+            Token::AmpersandAmpersand(_) => "&&".to_string(),
+            Token::PipePipe(_) => "||".to_string(),
+            Token::EqualEqual(_) => "==".to_string(),
+            Token::ExclamationEqual(_) => "!=".to_string(),
+            Token::Less(_) => "<".to_string(),
+            Token::Greater(_) => ">".to_string(),
+            Token::LessEqual(_) => "<=".to_string(),
+            Token::GreaterEqual(_) => ">=".to_string(),
+            Token::Equal(_) => "=".to_string(),
             Token::PlusEqual(_) => "+=".to_string(),
             Token::HypenEqual(_) => "-=".to_string(),
             Token::StarEqual(_) => "*=".to_string(),
@@ -255,49 +249,49 @@ impl Token{
     }
     pub fn span(&self) -> &Span {
         match self {
-            Token::Identifier(_, span) |
-            Token::Constant(_, span) |
-            Token::OpenParen(span) |
-            Token::CloseParen(span) |
-            Token::OpenBrace(span) |
-            Token::CloseBrace(span) |
-            Token::Semicolon(span) |
-            Token::Return(span) |
-            Token::Int(span) |
-            Token::Tilde(span) |
-            Token::Hypen(span) |
-            Token::HypenHypen(span) |
-            Token::Star(span) |
-            Token::Plus(span) |
-            Token::Slash(span) |
-            Token::Percent(span) |
-            Token::Pipe(span) |
-            Token::Ampersand (span) |
-            Token::Caret(span) |
-            Token::LeftShift(span) |
-            Token::RightShift(span) |
-            Token::AmpersandAmpersand(span)|
-            Token::PipePipe(span)|
-            Token::EqualEqual(span)|
-            Token::ExclamationEqual(span)|
-            Token::Less(span)|
-            Token::Greater(span)|
-            Token::LessEqual(span)|
-            Token::GreaterEqual(span)|
-            Token::Exclamation(span) |
-            Token::Void(span)=> span,
-            Token::Equal(span)=> span,
-            Token::PlusEqual(span) |
-            Token::HypenEqual(span) |
-            Token::StarEqual(span) |
-            Token::SlashEqual(span) |
-            Token::PercentEqual(span) |
-            Token::AmpersandEqual(span) |
-            Token::PipeEqual(span) |
-            Token::CaretEqual(span) |
-            Token::LeftShiftEqual(span) |
-            Token::RightShiftEqual(span) |
-            Token::PlusPlus(span) => span,
+            Token::Identifier(_, span)
+            | Token::Constant(_, span)
+            | Token::OpenParen(span)
+            | Token::CloseParen(span)
+            | Token::OpenBrace(span)
+            | Token::CloseBrace(span)
+            | Token::Semicolon(span)
+            | Token::Return(span)
+            | Token::Int(span)
+            | Token::Tilde(span)
+            | Token::Hypen(span)
+            | Token::HypenHypen(span)
+            | Token::Star(span)
+            | Token::Plus(span)
+            | Token::Slash(span)
+            | Token::Percent(span)
+            | Token::Pipe(span)
+            | Token::Ampersand(span)
+            | Token::Caret(span)
+            | Token::LeftShift(span)
+            | Token::RightShift(span)
+            | Token::AmpersandAmpersand(span)
+            | Token::PipePipe(span)
+            | Token::EqualEqual(span)
+            | Token::ExclamationEqual(span)
+            | Token::Less(span)
+            | Token::Greater(span)
+            | Token::LessEqual(span)
+            | Token::GreaterEqual(span)
+            | Token::Exclamation(span)
+            | Token::Void(span) => span,
+            Token::Equal(span) => span,
+            Token::PlusEqual(span)
+            | Token::HypenEqual(span)
+            | Token::StarEqual(span)
+            | Token::SlashEqual(span)
+            | Token::PercentEqual(span)
+            | Token::AmpersandEqual(span)
+            | Token::PipeEqual(span)
+            | Token::CaretEqual(span)
+            | Token::LeftShiftEqual(span)
+            | Token::RightShiftEqual(span)
+            | Token::PlusPlus(span) => span,
         }
     }
     pub fn from_string(s: &str) -> Option<TokenType> {
@@ -317,21 +311,21 @@ impl Token{
             "%" => Some(TokenType::Percent),
             "*" => Some(TokenType::Star),
             "/" => Some(TokenType::Slash),
-            "^"=>Some(TokenType::Caret),
-            "&"=>Some(TokenType::Ampersand),
-            "|" =>Some(TokenType::Pipe),
-            "<<"=>Some(TokenType::LeftShift),
-            ">>"=>Some(TokenType::RightShift),
-            "!"=> Some(TokenType::Exclamation),
-            "&&"=> Some(TokenType::AmpersandAmpersand),
-            "||"=> Some(TokenType::PipePipe),
-            "=="=> Some(TokenType::EqualEqual),
-            "!="=> Some(TokenType::ExclamationEqual),
-            "<"=> Some(TokenType::Less),
-            ">"=> Some(TokenType::Greater),
-            "<="=> Some(TokenType::LessEqual),
-            ">="=> Some(TokenType::GreaterEqual),
-            "="=> Some(TokenType::Equal),
+            "^" => Some(TokenType::Caret),
+            "&" => Some(TokenType::Ampersand),
+            "|" => Some(TokenType::Pipe),
+            "<<" => Some(TokenType::LeftShift),
+            ">>" => Some(TokenType::RightShift),
+            "!" => Some(TokenType::Exclamation),
+            "&&" => Some(TokenType::AmpersandAmpersand),
+            "||" => Some(TokenType::PipePipe),
+            "==" => Some(TokenType::EqualEqual),
+            "!=" => Some(TokenType::ExclamationEqual),
+            "<" => Some(TokenType::Less),
+            ">" => Some(TokenType::Greater),
+            "<=" => Some(TokenType::LessEqual),
+            ">=" => Some(TokenType::GreaterEqual),
+            "=" => Some(TokenType::Equal),
             "+=" => Some(TokenType::PlusEqual),
             "-=" => Some(TokenType::HypenEqual),
             "*=" => Some(TokenType::StarEqual),
@@ -346,40 +340,40 @@ impl Token{
             _ => None,
         }
     }
-    pub fn create_token(token_type: TokenType,s:&str,span: Span)->Self{
+    pub fn create_token(token_type: TokenType, s: &str, span: Span) -> Self {
         match token_type {
-            TokenType::Identifier => {Token::Identifier(s.to_string(), span)}
-            TokenType::Constant => {Token::Constant(s.parse::<i64>().unwrap(),span) }
-            TokenType::Int => {Token::Int(span)}
-            TokenType::Void => {Token::Void(span)}
-            TokenType::Return => {Token::Return(span)}
-            TokenType::OpenParen => {Token::OpenParen(span)}
-            TokenType::CloseParen => {Token::CloseParen(span)}
-            TokenType::OpenBrace => {Token::OpenBrace(span)}
-            TokenType::CloseBrace => {Token::CloseBrace(span)}
-            TokenType::Semicolon => {Token::Semicolon(span)}
-            TokenType::Tilde => {Token::Tilde(span)}
-            TokenType::Hypen => {Token::Hypen(span)}
-            TokenType::HypenHypen => {Token::HypenHypen(span)}
-            TokenType::Percent => { Token::Percent(span) }
-            TokenType::Slash => { Token::Slash(span) }
-            TokenType::Star => { Token::Star(span) }
-            TokenType::Plus => { Token::Plus(span) }
-            TokenType::Pipe=>{Token::Pipe(span) }
-            TokenType::Ampersand=>{Token::Ampersand(span)}
-            TokenType::Caret=>{Token::Caret(span)}
-            TokenType::LeftShift=>{Token::LeftShift(span)}
-            TokenType::RightShift=>{Token::RightShift(span)},
-            TokenType::Exclamation=>{Token::Exclamation(span)}
-            TokenType::AmpersandAmpersand=>{Token::AmpersandAmpersand(span)}
-            TokenType::PipePipe=>{Token::PipePipe(span)}
-            TokenType::EqualEqual =>{Token::EqualEqual(span)}
-            TokenType::ExclamationEqual =>{Token::ExclamationEqual(span)}
-            TokenType::Less =>{Token::Less(span)}
-            TokenType::Greater =>{Token::Greater(span)}
-            TokenType::LessEqual =>{Token::LessEqual(span)}
-            TokenType::GreaterEqual=>{Token::GreaterEqual(span)}
-            TokenType::Equal =>{Token::Equal(span)}
+            TokenType::Identifier => Token::Identifier(s.to_string(), span),
+            TokenType::Constant => Token::Constant(s.parse::<i64>().unwrap(), span),
+            TokenType::Int => Token::Int(span),
+            TokenType::Void => Token::Void(span),
+            TokenType::Return => Token::Return(span),
+            TokenType::OpenParen => Token::OpenParen(span),
+            TokenType::CloseParen => Token::CloseParen(span),
+            TokenType::OpenBrace => Token::OpenBrace(span),
+            TokenType::CloseBrace => Token::CloseBrace(span),
+            TokenType::Semicolon => Token::Semicolon(span),
+            TokenType::Tilde => Token::Tilde(span),
+            TokenType::Hypen => Token::Hypen(span),
+            TokenType::HypenHypen => Token::HypenHypen(span),
+            TokenType::Percent => Token::Percent(span),
+            TokenType::Slash => Token::Slash(span),
+            TokenType::Star => Token::Star(span),
+            TokenType::Plus => Token::Plus(span),
+            TokenType::Pipe => Token::Pipe(span),
+            TokenType::Ampersand => Token::Ampersand(span),
+            TokenType::Caret => Token::Caret(span),
+            TokenType::LeftShift => Token::LeftShift(span),
+            TokenType::RightShift => Token::RightShift(span),
+            TokenType::Exclamation => Token::Exclamation(span),
+            TokenType::AmpersandAmpersand => Token::AmpersandAmpersand(span),
+            TokenType::PipePipe => Token::PipePipe(span),
+            TokenType::EqualEqual => Token::EqualEqual(span),
+            TokenType::ExclamationEqual => Token::ExclamationEqual(span),
+            TokenType::Less => Token::Less(span),
+            TokenType::Greater => Token::Greater(span),
+            TokenType::LessEqual => Token::LessEqual(span),
+            TokenType::GreaterEqual => Token::GreaterEqual(span),
+            TokenType::Equal => Token::Equal(span),
             TokenType::PlusEqual => Token::PlusEqual(span),
             TokenType::HypenEqual => Token::HypenEqual(span),
             TokenType::StarEqual => Token::StarEqual(span),
@@ -395,29 +389,41 @@ impl Token{
     }
     pub fn is_binary_op(&self) -> bool {
         match self.get_token_type() {
-            TokenType::Hypen | TokenType::Plus |
-            TokenType::Slash | TokenType::Star | TokenType::Percent |
-            TokenType::Pipe | TokenType::Ampersand |TokenType::Caret |
-            TokenType::LeftShift| TokenType::RightShift| TokenType::AmpersandAmpersand| TokenType::PipePipe |
-            TokenType::EqualEqual | TokenType::ExclamationEqual| TokenType::Less|
-            TokenType::Greater| TokenType::LessEqual| TokenType::GreaterEqual|
-            TokenType::Equal => true,
-            _ => false
+            TokenType::Hypen
+            | TokenType::Plus
+            | TokenType::Slash
+            | TokenType::Star
+            | TokenType::Percent
+            | TokenType::Pipe
+            | TokenType::Ampersand
+            | TokenType::Caret
+            | TokenType::LeftShift
+            | TokenType::RightShift
+            | TokenType::AmpersandAmpersand
+            | TokenType::PipePipe
+            | TokenType::EqualEqual
+            | TokenType::ExclamationEqual
+            | TokenType::Less
+            | TokenType::Greater
+            | TokenType::LessEqual
+            | TokenType::GreaterEqual
+            | TokenType::Equal => true,
+            _ => false,
         }
     }
     pub fn is_compound_assign(&self) -> bool {
         match self.get_token_type() {
-            TokenType::PlusEqual |
-            TokenType::HypenEqual |
-            TokenType::StarEqual |
-            TokenType::SlashEqual |
-            TokenType::PercentEqual |
-            TokenType::AmpersandEqual |
-            TokenType::PipeEqual |
-            TokenType::CaretEqual |
-            TokenType::LeftShiftEqual |
-            TokenType::RightShiftEqual => true,
-            _ => false
+            TokenType::PlusEqual
+            | TokenType::HypenEqual
+            | TokenType::StarEqual
+            | TokenType::SlashEqual
+            | TokenType::PercentEqual
+            | TokenType::AmpersandEqual
+            | TokenType::PipeEqual
+            | TokenType::CaretEqual
+            | TokenType::LeftShiftEqual
+            | TokenType::RightShiftEqual => true,
+            _ => false,
         }
     }
 

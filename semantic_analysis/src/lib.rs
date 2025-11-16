@@ -1,8 +1,8 @@
-mod semantic_error;
 mod analyze;
+mod semantic_error;
 
-pub use semantic_error::SemanticError;
 pub use analyze::SemanticAnalyzer;
+pub use semantic_error::SemanticError;
 #[cfg(test)]
 mod tests {
     fn init(src: &str) -> Result<(), SemanticError> {
@@ -23,7 +23,8 @@ mod tests {
             int a = 1;
             int a = 2;
             return a;
-        }");
+        }",
+        );
         let result = init(&source);
         assert_eq!(result.is_ok(), false);
     }
@@ -34,7 +35,8 @@ mod tests {
         int main(void) {
             int b = 1;
             return a;
-        }");
+        }",
+        );
         let result = init(&source);
         assert_eq!(result.is_ok(), false);
     }
@@ -46,8 +48,9 @@ mod tests {
             int b = 1;
             2 = b;
             return a;
-        }");
+        }",
+        );
         let result = init(&source);
-        assert_eq!(result.is_ok(),false);
+        assert_eq!(result.is_ok(), false);
     }
 }

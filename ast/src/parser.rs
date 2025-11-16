@@ -3,33 +3,33 @@ use crate::parser_error::ParserError;
 use lex::token;
 use lex::token::{Token, TokenType};
 
-
-pub struct Parser{
+pub struct Parser {
     tokens: Vec<token::Token>,
-    pos:usize,
+    pos: usize,
 }
 
-impl Parser{
-    pub fn new(tokens:Vec<token::Token>)->Self{
-        Parser{
-            tokens,
-            pos:0
-        }
+impl Parser {
+    pub fn new(tokens: Vec<token::Token>) -> Self {
+        Parser { tokens, pos: 0 }
     }
 
-    fn excepted_token(&mut self,expected:TokenType)->Result<(),ParserError>{
-        if self.pos >= self.tokens.len(){
+    fn excepted_token(&mut self, expected: TokenType) -> Result<(), ParserError> {
+        if self.pos >= self.tokens.len() {
             return Err(ParserError::UnexpectedEOF);
         }
         let current_token = &self.tokens[self.pos];
-        if current_token.get_token_type() != expected{
-            return Err(ParserError::ExpectedToken(current_token.span().line, current_token.span().column,
-                format!("{:?}",expected), format!("{:?}",current_token.get_token_type())));
+        if current_token.get_token_type() != expected {
+            return Err(ParserError::ExpectedToken(
+                current_token.span().line,
+                current_token.span().column,
+                format!("{:?}", expected),
+                format!("{:?}", current_token.get_token_type()),
+            ));
         }
-        self.pos+=1;
+        self.pos += 1;
         Ok(())
     }
-    fn except_token_optional(&mut self,expected:TokenType) ->Result<(),ParserError>{
+    fn except_token_optional(&mut self, expected: TokenType) -> Result<(), ParserError> {
         let res = self.excepted_token(expected);
         if res.is_err() {
             return res;
@@ -37,23 +37,23 @@ impl Parser{
         Ok(())
     }
 
-    fn peek(&mut self,)->Result<Token,ParserError>{
-        if self.pos >= self.tokens.len(){
+    fn peek(&mut self) -> Result<Token, ParserError> {
+        if self.pos >= self.tokens.len() {
             return Err(ParserError::UnexpectedEOF);
         }
         let current_token = &self.tokens[self.pos];
         Ok(current_token.clone())
     }
-    fn eat(&mut self)->Result<Token,ParserError>{
-        if self.pos >= self.tokens.len(){
+    fn eat(&mut self) -> Result<Token, ParserError> {
+        if self.pos >= self.tokens.len() {
             return Err(ParserError::UnexpectedEOF);
         }
         let current_token = &self.tokens[self.pos];
-        self.pos+=1;
+        self.pos += 1;
         Ok(current_token.clone())
     }
 
-    pub fn parse(&mut self,)->Result<Program,ParserError>{
+    pub fn parse(&mut self) -> Result<Program, ParserError> {
         let mut function_body = Vec::new();
         self.excepted_token(TokenType::Int)?;
         self.excepted_token(TokenType::Identifier)?;
@@ -67,26 +67,28 @@ impl Parser{
             function_body.push(block_item);
         }
         self.eat()?;
-        if self.pos < self.tokens.len(){
+        if self.pos < self.tokens.len() {
             return Err(ParserError::UnexpectedToken(
                 self.tokens[self.pos].span().line,
                 self.tokens[self.pos].span().column,
-                format!("{:?}",self.tokens[self.pos].get_token_type())
+                format!("{:?}", self.tokens[self.pos].get_token_type()),
             ));
         }
-        Ok(Program{function:Function{
-            name:"main".to_string(),
-            body:function_body
-        }})
+        Ok(Program {
+            function: Function {
+                name: "main".to_string(),
+                body: function_body,
+            },
+        })
     }
-    fn parse_block_element(&mut self)->Result<BlockElement,ParserError>{
+    fn parse_block_element(&mut self) -> Result<BlockElement, ParserError> {
         let next_token = self.peek()?;
-        match next_token.get_token_type(){
-            TokenType::Int=>{
+        match next_token.get_token_type() {
+            TokenType::Int => {
                 let decl = self.parse_declaration()?;
                 Ok(BlockElement::Declaration(decl))
             }
-            _=>{
+            _ => {
                 let stmt = self.parse_stmt()?;
                 Ok(BlockElement::Stmt(stmt))
             }
@@ -97,57 +99,58 @@ impl Parser{
     Parse Declaration
     */
 
-    fn parse_declaration(&mut self)->Result<Declaration,ParserError>{
-
+    fn parse_declaration(&mut self) -> Result<Declaration, ParserError> {
         self.excepted_token(TokenType::Int)?;
         let var_name_token = self.eat()?;
-        if var_name_token.get_token_type() != TokenType::Identifier{
-            return Err(ParserError::ExpectedToken(var_name_token.span().line,var_name_token.span().column,
-                format!("{:?}",TokenType::Identifier),format!("{:?}",var_name_token.get_token_type())));
+        if var_name_token.get_token_type() != TokenType::Identifier {
+            return Err(ParserError::ExpectedToken(
+                var_name_token.span().line,
+                var_name_token.span().column,
+                format!("{:?}", TokenType::Identifier),
+                format!("{:?}", var_name_token.get_token_type()),
+            ));
         }
         let var_name = match var_name_token {
             Token::Identifier(name, _span) => name,
             _ => unreachable!(),
         };
-        let mut initializer:Option<Expression> = None;
+        let mut initializer: Option<Expression> = None;
         let next_token = self.peek()?;
-        if next_token.get_token_type() == TokenType::Equal{
+        if next_token.get_token_type() == TokenType::Equal {
             self.eat()?;
             let expr = self.parse_expression(0)?;
             initializer = Some(expr);
         }
         self.excepted_token(TokenType::Semicolon)?;
-        Ok(Declaration::DefineVar{
+        Ok(Declaration::DefineVar {
             var_name,
-            initializer
+            initializer,
         })
     }
-
 
     /*
     Parse Statement
      */
-    fn parse_stmt(&mut self)->Result<Stmt,ParserError>{
+    fn parse_stmt(&mut self) -> Result<Stmt, ParserError> {
         let next_token = self.peek()?;
         match next_token.get_token_type() {
-            TokenType::Return=> {
+            TokenType::Return => {
                 self.eat()?;
                 let return_val = self.parse_expression(0)?;
                 self.excepted_token(TokenType::Semicolon)?;
-                 Ok(Stmt::Return{expr:return_val})
-            },
-            TokenType::Semicolon=>{
+                Ok(Stmt::Return { expr: return_val })
+            }
+            TokenType::Semicolon => {
                 self.eat()?;
                 Ok(Stmt::Null)
             }
-            _=> {
+            _ => {
                 let expr = self.parse_expression(0)?;
                 self.excepted_token(TokenType::Semicolon)?;
-                Ok(Stmt::Expression{expr})
+                Ok(Stmt::Expression { expr })
             }
         }
     }
-
 
     /*
     Parse Expression
@@ -159,35 +162,36 @@ impl Parser{
         let mut left = self.parse_factor()?;
         let mut next_token = self.peek()?;
         if next_token.get_token_type() == TokenType::PlusPlus {
-
             if !matches!(left, Expression::Var(_)) {
                 return Err(ParserError::InvalidLValue(
                     next_token.span().line,
                     next_token.span().column,
-                    "Postfix ++ requires an lvalue".to_string()
+                    "Postfix ++ requires an lvalue".to_string(),
                 ));
             }
             self.eat()?;
             left = Expression::Increment {
                 expr: Box::new(left),
-                pre: false
+                pre: false,
             };
         } else if next_token.get_token_type() == TokenType::HypenHypen {
             if !matches!(left, Expression::Var(_)) {
                 return Err(ParserError::InvalidLValue(
                     next_token.span().line,
                     next_token.span().column,
-                    "Postfix -- requires an lvalue".to_string()
+                    "Postfix -- requires an lvalue".to_string(),
                 ));
             }
             self.eat()?;
             left = Expression::Decrement {
                 expr: Box::new(left),
-                pre: false
+                pre: false,
             };
         }
         next_token = self.peek()?;
-        while (next_token.is_binary_op() || next_token.is_compound_assign()) && next_token.get_precedence() >= min_precedence {
+        while (next_token.is_binary_op() || next_token.is_compound_assign())
+            && next_token.get_precedence() >= min_precedence
+        {
             if next_token.get_token_type() == TokenType::Equal {
                 let op = self.eat()?;
                 let op_precedence = op.get_precedence();
@@ -196,7 +200,7 @@ impl Parser{
                     expr_to: Box::new(left),
                     initializer: Box::new(right),
                 };
-            }else if next_token.is_compound_assign() {
+            } else if next_token.is_compound_assign() {
                 let op = self.eat()?;
                 let op_precedence = op.get_precedence();
                 left = Expression::CompoundAssign {
@@ -204,12 +208,15 @@ impl Parser{
                     var: Box::new(left),
                     expr: Box::new(self.parse_expression(op_precedence)?),
                 };
-            }
-            else {
+            } else {
                 let operator = self.eat()?;
                 let op_precedence = operator.get_precedence();
                 let right = self.parse_expression(op_precedence + 1)?;
-                left = Expression::Binary { op: operator, left: Box::new(left), right: Box::new(right) };
+                left = Expression::Binary {
+                    op: operator,
+                    left: Box::new(left),
+                    right: Box::new(right),
+                };
             }
             next_token = self.peek()?
         }
@@ -220,27 +227,27 @@ impl Parser{
         if self.pos >= self.tokens.len() {
             return Err(ParserError::UnexpectedEOF);
         }
-        let next_token =self.peek()?;
+        let next_token = self.peek()?;
         let mut result = match next_token {
-            Token::Constant(value, _span)=>{
+            Token::Constant(value, _span) => {
                 self.eat()?;
                 Expression::Constant(value)
-            },
+            }
             Token::OpenParen(_) => {
                 self.eat()?;
                 let expr = self.parse_expression(0)?;
                 self.excepted_token(TokenType::CloseParen)?;
                 expr
             }
-            Token::Hypen(_)| Token::Tilde(_)| Token::Exclamation(_)=>{
+            Token::Hypen(_) | Token::Tilde(_) | Token::Exclamation(_) => {
                 let op = self.eat()?;
                 let expr = self.parse_factor()?;
-                Expression::UnaryOP{
+                Expression::UnaryOP {
                     op,
-                    expr:Box::new(expr)
+                    expr: Box::new(expr),
                 }
             }
-            Token::Identifier(name,_span)=>{
+            Token::Identifier(name, _span) => {
                 self.eat()?;
                 Expression::Var(name)
             }
@@ -249,7 +256,7 @@ impl Parser{
                 let expr = self.parse_factor()?;
                 Expression::Increment {
                     expr: Box::new(expr),
-                    pre: true
+                    pre: true,
                 }
             }
             Token::HypenHypen(_) => {
@@ -257,13 +264,16 @@ impl Parser{
                 let expr = self.parse_factor()?;
                 Expression::Decrement {
                     expr: Box::new(expr),
-                    pre: true
+                    pre: true,
                 }
             }
-            _=>{
+            _ => {
                 let current_token = self.peek()?;
-                return Err(ParserError::UnexpectedToken(current_token.span().line,current_token.span().column,
-                                                        format!("{:?}", current_token.get_token_type())));
+                return Err(ParserError::UnexpectedToken(
+                    current_token.span().line,
+                    current_token.span().column,
+                    format!("{:?}", current_token.get_token_type()),
+                ));
             }
         };
         loop {
@@ -273,26 +283,26 @@ impl Parser{
                     return Err(ParserError::InvalidLValue(
                         next.span().line,
                         next.span().column,
-                        "Postfix ++ requires an lvalue".to_string()
+                        "Postfix ++ requires an lvalue".to_string(),
                     ));
                 }
                 self.eat()?;
                 result = Expression::Increment {
                     expr: Box::new(result),
-                    pre: false
+                    pre: false,
                 };
             } else if next.get_token_type() == TokenType::HypenHypen {
                 if !matches!(result, Expression::Var(_)) {
                     return Err(ParserError::InvalidLValue(
                         next.span().line,
                         next.span().column,
-                        "Postfix -- requires an lvalue".to_string()
+                        "Postfix -- requires an lvalue".to_string(),
                     ));
                 }
                 self.eat()?;
                 result = Expression::Decrement {
                     expr: Box::new(result),
-                    pre: false
+                    pre: false,
                 };
             } else {
                 break;

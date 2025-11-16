@@ -10,6 +10,8 @@ use lex::error::LexerError;
 use codegen::ast_parser::AsmParser;
 use std::path::Path;
 use std::ffi::OsStr;
+use semantic_analysis::SemanticError;
+use semantic_analysis::SemanticAnalyzer;
 #[derive(Error,Debug)]
 enum CompilerError {
     #[error("IO Error: {0}")]
@@ -17,7 +19,9 @@ enum CompilerError {
     #[error("Lexer Error: {0}")]
     LexerError(#[from]LexerError),
     #[error("Parser Error: {0}")]
-    ParserError(#[from] ParserError)
+    ParserError(#[from] ParserError),
+    #[error("Semantic Error: {0}")]
+    SemanticError(#[from] SemanticError),
 }
 
 
@@ -38,6 +42,8 @@ struct Args{
     codegen: bool,
     #[arg(long)]
     tacky: bool,
+    #[arg(long)]
+    validate: bool,
 }
 
 
@@ -48,6 +54,7 @@ fn main() {
                CompilerError::IoError(_) => {code = 64;}
                CompilerError::LexerError(_) => {code = 65;}
                CompilerError::ParserError(_) => {code = 66;}
+                CompilerError::SemanticError(_) => {code = 67;}
            }
           writeln!(stderr()," {}",e).unwrap();
        }
@@ -73,14 +80,21 @@ fn run() -> Result<(), CompilerError> {
       parsing Stage
     */
     let mut parser = ast::parser::Parser::new(tokens);
-    let ast = parser.parse()?;
+    let mut ast = parser.parse()?;
     
     if args.parse { return Ok(()) }
 
     /*
+        Semantic Validation Stage
+    */
+    let mut analyzer = SemanticAnalyzer::new();
+    analyzer.semantic_analysis(&mut ast)?;
+
+    if args.validate { return Ok(()) }
+    /*
     Tacky Generation Stage
     */
-    let mut tacky_parser = tacky::tacky_parser::TackyParser::new();
+    let mut tacky_parser = tacky::tacky_parser::TackyParser::new(analyzer.var_count);
     let tacky_program = tacky_parser.emit_tacky(ast.clone());
     
     if args.tacky { return Ok(()) }

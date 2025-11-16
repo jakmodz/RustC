@@ -7,3 +7,4 @@ edition = "2024"
 ast = {path = "../ast"}
 lex = {path = "../lex"}
 tacky = {path = "../tacky"}
+semantic_analysis = {path = "../semantic_analysis"}

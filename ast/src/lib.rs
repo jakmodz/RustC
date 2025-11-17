@@ -4,7 +4,6 @@ pub mod parser_error;
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::*;
 
     #[test]
     fn ast_parser_test() {

@@ -1,12 +1,17 @@
 use crate::error::LexerError;
-use crate::token::{Span, Token, TokenType};
+use crate::token::{Token, TokenType};
 use lazy_static::lazy_static;
 use regex::Regex;
+use crate::Span;
 
 lazy_static! {
     static ref PATTERNS: Vec<(Regex, TokenType)> = {
         vec![
-            // Multi-character operators MUST come first!
+
+            (Regex::new(r"^return\b").unwrap(), TokenType::Return),
+            (Regex::new(r"^void\b").unwrap(), TokenType::Void),
+            (Regex::new(r"^else\b").unwrap(), TokenType::Else),
+            (Regex::new(r"^int\b").unwrap(), TokenType::Int),
             (Regex::new(r"^<<=").unwrap(), TokenType::LeftShiftEqual),
             (Regex::new(r"^>>=").unwrap(), TokenType::RightShiftEqual),
             (Regex::new(r"^<<").unwrap(), TokenType::LeftShift),
@@ -27,11 +32,7 @@ lazy_static! {
             (Regex::new(r"^!=").unwrap(), TokenType::ExclamationEqual),
             (Regex::new(r"^<=").unwrap(), TokenType::LessEqual),
             (Regex::new(r"^>=").unwrap(), TokenType::GreaterEqual),
-
-            // Keywords
-            (Regex::new(r"^int\b").unwrap(), TokenType::Int),
-            (Regex::new(r"^void\b").unwrap(), TokenType::Void),
-            (Regex::new(r"^return\b").unwrap(), TokenType::Return),
+            (Regex::new(r"^if\b").unwrap(), TokenType::If),
 
             // Identifiers (after keywords)
             (Regex::new(r"^[a-zA-Z_]\w*").unwrap(), TokenType::Identifier),
@@ -58,14 +59,15 @@ lazy_static! {
             (Regex::new(r"^!").unwrap(), TokenType::Exclamation),
             (Regex::new(r"^<").unwrap(), TokenType::Less),
             (Regex::new(r"^>").unwrap(), TokenType::Greater),
-
+            (Regex::new(r"^\?").unwrap(), TokenType::QuestionMark),
+            (Regex::new(r"^:").unwrap(), TokenType::Colon),
         ]
     };
 
     static ref SKIP_PATTERNS: Vec<Regex> = {
         vec![
            Regex::new(r"^//[^\n]*\n?").unwrap(),
-           Regex::new(r"^#(?:[^\n\\]|\\\n)*\n?").unwrap()
+           Regex::new(r"^#[^\n]*\n?").unwrap()
         ]
     };
 
@@ -122,15 +124,17 @@ impl Lexer {
         let mut remaining = input.clone();
 
         while !remaining.is_empty() {
-            if remaining.starts_with(char::is_whitespace) {
-                let ch = remaining.chars().next().unwrap();
-                if ch == '\n' {
-                    self.new_line();
-                } else {
-                    self.pos += 1;
+            // Fixed whitespace handling
+            if let Some(ch) = remaining.chars().next() {
+                if ch.is_whitespace() {
+                    if ch == '\n' {
+                        self.new_line();
+                    } else {
+                        self.pos += 1;
+                    }
+                    remaining = remaining[ch.len_utf8()..].to_string();
+                    continue;
                 }
-                remaining = remaining[ch.len_utf8()..].to_string();
-                continue;
             }
 
             if self.skip_comments(&mut remaining) {
@@ -159,6 +163,15 @@ impl Lexer {
 
             let matched = longest_match.unwrap();
 
+
+            if matched.1.is_empty() {
+                return Err(LexerError::InvalidToken(
+                    self.line,
+                    self.pos + 1,
+                    remaining.chars().next().unwrap(),
+                ));
+            }
+
             if matches!(matched.0, TokenType::Constant)
                 && let Some(next_char) = remaining[matched.1.len()..].chars().next()
             {
@@ -166,11 +179,13 @@ impl Lexer {
                     return Err(LexerError::InvalidToken(self.line, self.pos + 1, next_char));
                 }
             }
+
+            let start_pos = self.pos;
             self.pos += matched.1.len();
             tokens.push(Token::create_token(
                 matched.0,
                 matched.1,
-                Span::new(self.pos, self.line),
+                Span::new(start_pos, self.line),
             ));
             remaining = remaining[matched.1.len()..].to_string();
         }
@@ -178,6 +193,7 @@ impl Lexer {
         Ok(tokens)
     }
 }
+
 impl Default for Lexer {
     fn default() -> Self {
         Self::new()

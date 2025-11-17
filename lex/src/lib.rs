@@ -1,7 +1,8 @@
 pub mod error;
 pub mod lexer;
 pub mod token;
-
+mod span;
+use crate::span::Span;
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Formatter;
-
+use crate::Span;
 lazy_static! {
     static ref OPERATOR_PRECEDENCE: HashMap<TokenType, usize> = {
         let mut map = HashMap::new();
@@ -38,17 +38,6 @@ lazy_static! {
         map.insert(TokenType::RightShiftEqual, 1);
         map
     };
-}
-#[derive(PartialEq, Debug, Clone)]
-pub struct Span {
-    pub column: usize,
-    pub line: usize,
-}
-
-impl Span {
-    pub fn new(column: usize, line: usize) -> Self {
-        Self { column, line }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -96,6 +85,10 @@ pub enum TokenType {
     LeftShiftEqual,
     RightShiftEqual,
     PlusPlus,
+    If,
+    Else,
+    QuestionMark,
+    Colon,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -151,6 +144,10 @@ pub enum Token {
     //types
     Int(Span),
     Void(Span),
+    If(Span),
+    Else(Span),
+    QuestionMark(Span),
+    Colon(Span),
 }
 
 impl Token {
@@ -199,6 +196,10 @@ impl Token {
             Token::LeftShiftEqual(_) => TokenType::LeftShiftEqual,
             Token::RightShiftEqual(_) => TokenType::RightShiftEqual,
             Token::PlusPlus(_) => TokenType::PlusPlus,
+            Token::If(_)=>TokenType::If,
+            Token::Else(_)=>TokenType::Else,
+            Token::QuestionMark(_)=>TokenType::QuestionMark,
+            Token::Colon(_)=>TokenType::Colon,
         }
     }
 
@@ -234,9 +235,9 @@ impl Token {
             | Token::LessEqual(span)
             | Token::GreaterEqual(span)
             | Token::Exclamation(span)
-            | Token::Void(span) => span,
-            Token::Equal(span) => span,
-            Token::PlusEqual(span)
+            | Token::Void(span)
+            |Token::Equal(span)
+            | Token::PlusEqual(span)
             | Token::HypenEqual(span)
             | Token::StarEqual(span)
             | Token::SlashEqual(span)
@@ -246,7 +247,11 @@ impl Token {
             | Token::CaretEqual(span)
             | Token::LeftShiftEqual(span)
             | Token::RightShiftEqual(span)
-            | Token::PlusPlus(span) => span,
+            | Token::PlusPlus(span)
+            | Token::If(span)
+            | Token::Else(span)
+            | Token::QuestionMark(span)
+            | Token::Colon(span)=> span
         }
     }
     pub fn from_string(s: &str) -> Option<TokenType> {
@@ -292,6 +297,10 @@ impl Token {
             "<<=" => Some(TokenType::LeftShiftEqual),
             ">>=" => Some(TokenType::RightShiftEqual),
             "++" => Some(TokenType::PlusPlus),
+            "if"=>Some(TokenType::If),
+            "else"=>Some(TokenType::Else),
+            "?"=>Some(TokenType::QuestionMark),
+            ":"=>Some(TokenType::Colon),
             _ => None,
         }
     }
@@ -340,6 +349,10 @@ impl Token {
             TokenType::LeftShiftEqual => Token::LeftShiftEqual(span),
             TokenType::RightShiftEqual => Token::RightShiftEqual(span),
             TokenType::PlusPlus => Token::PlusPlus(span),
+            TokenType::If => Token::If(span),
+            TokenType::Else => Token::Else(span),
+            TokenType::QuestionMark => Token::QuestionMark(span),
+            TokenType::Colon => Token::Colon(span),
         }
     }
     pub fn is_binary_op(&self) -> bool {
@@ -435,6 +448,10 @@ impl fmt::Display for Token {
             Token::LeftShiftEqual(_) => write!(f, "<<="),
             Token::RightShiftEqual(_) => write!(f, ">>="),
             Token::PlusPlus(_) => write!(f, "++"),
+            Token::If(_)=>write!(f, "if"),
+            Token::Else(_)=>write!(f, "else"),
+            Token::QuestionMark(_)=>write!(f, "?"),
+            Token::Colon(_)=>write!(f, ":"),
         }
     }
 }

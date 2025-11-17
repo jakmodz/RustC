@@ -21,14 +21,7 @@ impl TackyParser {
         self.var_counter += 1;
         s
     }
-    fn generate_label(&mut self, name: &str, instructions: &mut Vec<tacky::TackyInstruction>) {
-        let str = format!("{}_{}", name, self.label_counter);
-        self.label_counter += 1;
-        instructions.push(TackyInstruction::Label(str));
-    }
-    fn get_label(&mut self, name: String) -> String {
-        format!("{}_{}", name, self.label_counter)
-    }
+    
     pub fn emit_tacky(&mut self, ast: Program) -> tacky::Program {
         let mut body = Vec::new();
 

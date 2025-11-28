@@ -10,6 +10,7 @@ lazy_static! {
 
             (Regex::new(r"^return\b").unwrap(), TokenType::Return),
             (Regex::new(r"^void\b").unwrap(), TokenType::Void),
+            (Regex::new(r"^goto\b").unwrap(), TokenType::Goto),
             (Regex::new(r"^else\b").unwrap(), TokenType::Else),
             (Regex::new(r"^int\b").unwrap(), TokenType::Int),
             (Regex::new(r"^<<=").unwrap(), TokenType::LeftShiftEqual),

@@ -121,4 +121,15 @@ mod tests {
 
         Ok(())
     }
+    #[test]
+    fn goto_tokens_test() -> Result<(), LexerError> {
+        let mut lex = Lexer::new();
+        let tokens = lex.tokenize("goto".to_string())?;
+        test(
+            tokens,
+            vec!["goto".to_string()],
+        );
+
+        Ok(())
+    }
 }

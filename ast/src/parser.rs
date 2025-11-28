@@ -1,3 +1,4 @@
+use crate::parser::Token::Identifier;
 use crate::ast::*;
 use crate::parser_error::ParserError;
 use lex::token;
@@ -44,6 +45,13 @@ impl Parser {
         let current_token = &self.tokens[self.pos];
         Ok(current_token.clone())
     }
+    fn peek_next(&mut self) -> Result<Token, ParserError> {
+        if self.pos + 1 >= self.tokens.len() {
+            return Err(ParserError::UnexpectedEOF);
+        }
+        let next_token = &self.tokens[self.pos + 1];
+        Ok(next_token.clone())
+    }
     fn eat(&mut self) -> Result<Token, ParserError> {
         if self.pos >= self.tokens.len() {
             return Err(ParserError::UnexpectedEOF);
@@ -88,6 +96,8 @@ impl Parser {
                 let decl = self.parse_declaration()?;
                 Ok(BlockElement::Declaration(decl))
             }
+
+
             _ => {
                 let stmt = self.parse_stmt()?;
                 Ok(BlockElement::Stmt(stmt))
@@ -163,6 +173,20 @@ impl Parser {
                     then_branch: Box::new(then_branch),
                     else_branch: else_branch.map(Box::new),
                 })
+            }
+            TokenType::Goto=>{
+                self.eat()?;
+                let name = self.eat()?.to_string();
+                self.excepted_token(TokenType::Semicolon)?;
+                Ok(Stmt::Goto(name))
+            }
+            TokenType::Identifier=>{
+                let name = match self.eat()? {
+                    Token::Identifier(name, _span) => name,
+                    _ => unreachable!(),
+                };
+                self.excepted_token(TokenType::Colon)?;
+                Ok(Stmt::GotoLabel(name))
             }
             _ => {
                 let expr = self.parse_expression(0)?;

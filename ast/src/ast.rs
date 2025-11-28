@@ -29,6 +29,8 @@ pub enum Stmt {
         then_branch: Box<Stmt>,
         else_branch: Option<Box<Stmt>>,
     },
+    Goto(String),
+    GotoLabel(String),
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum Declaration {

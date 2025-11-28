@@ -47,6 +47,7 @@ pub enum TokenType {
     Constant,
     Int,
     Void,
+    Goto,
     Return,
     OpenParen,
     CloseParen,
@@ -142,6 +143,7 @@ pub enum Token {
 
     //Keywords
     Return(Span),
+    Goto(Span),
     //types
     Int(Span),
     Void(Span),
@@ -201,6 +203,7 @@ impl Token {
             Token::Else(_)=>TokenType::Else,
             Token::QuestionMark(_)=>TokenType::QuestionMark,
             Token::Colon(_)=>TokenType::Colon,
+            Token::Goto(_)=>TokenType::Goto,
         }
     }
 
@@ -252,7 +255,8 @@ impl Token {
             | Token::If(span)
             | Token::Else(span)
             | Token::QuestionMark(span)
-            | Token::Colon(span)=> span
+            | Token::Colon(span)
+            | Token::Goto(span)=> span
         }
     }
     pub fn from_string(s: &str) -> Option<TokenType> {
@@ -300,6 +304,7 @@ impl Token {
             "++" => Some(TokenType::PlusPlus),
             "if"=>Some(TokenType::If),
             "else"=>Some(TokenType::Else),
+            "goto"=>Some(TokenType::Goto),
             "?"=>Some(TokenType::QuestionMark),
             ":"=>Some(TokenType::Colon),
             _ => None,
@@ -354,6 +359,7 @@ impl Token {
             TokenType::Else => Token::Else(span),
             TokenType::QuestionMark => Token::QuestionMark(span),
             TokenType::Colon => Token::Colon(span),
+            TokenType::Goto => Token::Goto(span),
         }
     }
     pub fn is_binary_op(&self) -> bool {
@@ -455,6 +461,7 @@ impl fmt::Display for Token {
             Token::Else(_)=>write!(f, "else"),
             Token::QuestionMark(_)=>write!(f, "?"),
             Token::Colon(_)=>write!(f, ":"),
+            Token::Goto(_)=>write!(f, "goto"),
         }
     }
 }

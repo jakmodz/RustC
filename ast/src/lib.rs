@@ -34,4 +34,21 @@ mod tests {
         assert_eq!(ast.function.name, String::from("main"));
         assert_eq!(ast.function.body.len(), 3);
     }
+    #[test]
+    fn goto_label() {
+        let source = String::from(
+            "int main(void) {
+ goto label1;
+label1:
+    return 0;
+}",
+        );
+        let mut lexer = lex::lexer::Lexer::new();
+        let tokens = lexer.tokenize(source).unwrap();
+        let mut parser = crate::parser::Parser::new(tokens);
+        let ast = parser.parse().unwrap();
+        assert_eq!(ast.function.name, String::from("main"));
+        assert_eq!(ast.function.body.len(), 3);
+    }
+
 }

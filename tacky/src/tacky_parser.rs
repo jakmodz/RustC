@@ -80,8 +80,27 @@ impl TackyParser {
                 self.convert_expr(expr, body);
             }
             ast::ast::Stmt::Null => {}
-            ast::ast::Stmt::If { .. } => {
-                todo!()
+            ast::ast::Stmt::If { condition,then_branch,else_branch } => {
+                let c = self.convert_expr(condition, body);
+                if let Some(else_branch) = else_branch {
+                    let else_label = format!("else_label_{}", self.label_counter);
+                    self.label_counter += 1;
+                    let end_label = format!("end_label_{}", self.label_counter);
+                    self.label_counter += 1;
+                    body.push(TackyInstruction::JumpIfZero {cond: c, target: else_label.clone()});
+                    self.convert_stmt(*then_branch, body);
+                    body.push(TackyInstruction::Jump {target: end_label.clone()});
+                    body.push(TackyInstruction::Label(else_label));
+                    self.convert_stmt(*else_branch, body);
+                    body.push(TackyInstruction::Label(end_label));
+                }else {
+                    let end_label = format!("end_label_{}", self.label_counter);
+                    self.label_counter += 1;
+                    body.push(TackyInstruction::JumpIfZero {cond: c, target: end_label.clone()});
+                    self.convert_stmt(*then_branch, body);
+                    body.push(TackyInstruction::Label(end_label));
+
+                }
             }
         }
     }
@@ -91,6 +110,7 @@ impl TackyParser {
         instructions: &mut Vec<TackyInstruction>,
     ) -> tacky::Val {
         match expr {
+
             ast::ast::Expression::Assignment {
                 expr_to,
                 initializer,
@@ -280,6 +300,30 @@ impl TackyParser {
                     dst: dst.clone(),
                 });
                 dst
+            },
+            ast::ast::Expression::Conditional { cond,expr1, expr2 } => {
+                let end_label = format!("end_label_{}", self.label_counter);
+                self.label_counter += 1;
+                let e2 = format!("e2_label_{}", self.label_counter);
+                self.label_counter += 1;
+
+                let c = self.convert_expr(*cond, instructions);
+                instructions.push(TackyInstruction::JumpIfZero {cond: c, target: e2.clone()});
+                let v1 = self.convert_expr(*expr1, instructions);
+                let result_var = self.make_temporary();
+                instructions.push(TackyInstruction::Copy {
+                    src: v1,
+                    dst: Val::Var(result_var.clone()),
+                });
+                instructions.push(TackyInstruction::Jump {target:end_label.clone() });
+                instructions.push(TackyInstruction::Label(e2));
+                let v2 = self.convert_expr(*expr2, instructions);
+                instructions.push(TackyInstruction::Copy {
+                    src: v2,
+                    dst: Val::Var(result_var.clone()),
+                });
+                instructions.push(TackyInstruction::Label(end_label));
+                Val::Var(result_var)
             }
         }
     }

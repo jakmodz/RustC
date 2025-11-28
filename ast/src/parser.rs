@@ -144,6 +144,26 @@ impl Parser {
                 self.eat()?;
                 Ok(Stmt::Null)
             }
+            TokenType::If=>{
+                self.eat()?;
+                self.excepted_token(TokenType::OpenParen)?;
+                let condition = self.parse_expression(0)?;
+                self.excepted_token(TokenType::CloseParen)?;
+
+                let then_branch = self.parse_stmt()?;
+                let mut else_branch = None;
+                let next_token = self.peek()?;
+                if next_token.get_token_type() == TokenType::Else {
+                    self.eat()?;
+                    let else_stmts = self.parse_stmt()?;
+                    else_branch = Some(else_stmts);
+                }
+                Ok(Stmt::If {
+                    condition,
+                    then_branch: Box::new(then_branch),
+                    else_branch: else_branch.map(Box::new),
+                })
+            }
             _ => {
                 let expr = self.parse_expression(0)?;
                 self.excepted_token(TokenType::Semicolon)?;
@@ -151,6 +171,7 @@ impl Parser {
             }
         }
     }
+
 
     /*
     Parse Expression
@@ -208,7 +229,16 @@ impl Parser {
                     var: Box::new(left),
                     expr: Box::new(self.parse_expression(op_precedence)?),
                 };
-            } else {
+            }else if next_token.get_token_type()== TokenType::QuestionMark {
+                let middle = self.parse_middle()?;
+                let right = self.parse_expression(next_token.get_precedence())?;
+                left = Expression::Conditional {
+                    cond: Box::new(left),
+                    expr1: Box::new(middle),
+                    expr2: Box::new(right),
+                }
+            }
+            else {
                 let operator = self.eat()?;
                 let op_precedence = operator.get_precedence();
                 let right = self.parse_expression(op_precedence + 1)?;
@@ -222,6 +252,12 @@ impl Parser {
         }
 
         Ok(left)
+    }
+    fn parse_middle(&mut self)->Result<Expression, ParserError> {
+        self.eat()?;
+        let expr = self.parse_expression(0)?;
+        self.excepted_token(TokenType::Colon)?;
+        Ok(expr)
     }
     fn parse_factor(&mut self) -> Result<Expression, ParserError> {
         if self.pos >= self.tokens.len() {

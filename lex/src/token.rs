@@ -25,6 +25,7 @@ lazy_static! {
         map.insert(TokenType::Pipe, 15);
         map.insert(TokenType::AmpersandAmpersand, 10);
         map.insert(TokenType::PipePipe, 5);
+        map.insert(TokenType::QuestionMark, 3);
         map.insert(TokenType::Equal, 1);
         map.insert(TokenType::PlusEqual, 1);
         map.insert(TokenType::HypenEqual, 1);
@@ -377,6 +378,7 @@ impl Token {
                 | TokenType::LessEqual
                 | TokenType::GreaterEqual
                 | TokenType::Equal
+             | TokenType::QuestionMark
         )
     }
     pub fn is_compound_assign(&self) -> bool {
@@ -391,6 +393,7 @@ impl Token {
                 | TokenType::CaretEqual
                 | TokenType::LeftShiftEqual
                 | TokenType::RightShiftEqual
+
         )
     }
 

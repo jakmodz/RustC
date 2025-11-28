@@ -73,7 +73,19 @@ impl SemanticAnalyzer {
                 })
             }
             Stmt::Null => Ok(Stmt::Null),
-            Stmt::If { .. } => todo!(),
+            Stmt::If { else_branch,condition,then_branch } => {
+                let resolved_condition = self.resolve_expression(condition)?;
+                let resolved_then = Box::new(self.resolve_statement(then_branch)?);
+                let resolved_else = match else_branch {
+                    Some(else_stmt) => Some(Box::new(self.resolve_statement(else_stmt)?)),
+                    None => None,
+                };
+                Ok(Stmt::If {
+                    condition: resolved_condition,
+                    then_branch: resolved_then,
+                    else_branch: resolved_else,
+                })
+            }
         }
     }
     fn resolve_expression(&mut self, expression: &Expression) -> Result<Expression, SemanticError> {
@@ -126,6 +138,16 @@ impl SemanticAnalyzer {
                 var: Box::new(self.resolve_expression(var)?),
                 expr: Box::new(self.resolve_expression(expr)?),
             }),
+            Expression::Conditional {cond,expr1,expr2}=>{
+                let  resolved_cond = self.resolve_expression(cond)?;
+                let resolved_expr1 = self.resolve_expression(expr1)?;
+                let resolved_expr2 = self.resolve_expression(expr2)?;
+                Ok(Expression::Conditional {
+                    cond: Box::new(resolved_cond),
+                    expr1: Box::new(resolved_expr1),
+                    expr2: Box::new(resolved_expr2),
+                })
+            }
             _ => Ok(expression.clone()),
         }
     }

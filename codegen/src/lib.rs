@@ -14,11 +14,10 @@ mod tests {
     fn test_asm_gen() -> std::io::Result<()> {
         let source = String::from(
             "
-            int main(void) {
-            int a = 1;
-            int b = !a++;
-            return (a == 2 && b == 0);
-        }",
+           int main(void) {
+    if (1 + 2 == 4)
+        return 5;
+}",
         );
         let mut lexer = lex::lexer::Lexer::new();
         let tokens = lexer.tokenize(source).unwrap();

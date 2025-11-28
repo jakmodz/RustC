@@ -26,8 +26,8 @@ pub enum Stmt {
     Null,
     If {
         condition: Expression,
-        then_branch: Vec<Stmt>,
-        else_branch: Option<Vec<Stmt>>,
+        then_branch: Box<Stmt>,
+        else_branch: Option<Box<Stmt>>,
     },
 }
 #[derive(Debug, Clone, PartialEq)]
@@ -70,4 +70,9 @@ pub enum Expression {
         expr: Box<Expression>,
         pre: bool,
     },
+    Conditional {
+        cond: Box<Expression>,
+        expr1: Box<Expression>,
+        expr2: Box<Expression>,
+    }
 }

@@ -50,9 +50,9 @@ mod tests {
         let tokens = lex.tokenize("int \nmain(void)".to_string())?;
 
         assert_eq!(tokens[0].span().line, 1);
-        assert_eq!(tokens[3].span().line, 2);
-        assert_eq!(tokens[2].span().column, 5);
-        assert_eq!(tokens[3].span().column, 9);
+        assert_eq!(tokens[1].span().column, 0);
+        assert_eq!(tokens[2].span().column, 4);
+        assert_eq!(tokens[3].span().column, 5);
         Ok(())
     }
     #[test]

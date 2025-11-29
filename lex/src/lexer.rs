@@ -7,15 +7,20 @@ use regex::Regex;
 lazy_static! {
     static ref PATTERNS: Vec<(Regex, TokenType)> = {
         vec![
-
+            (Regex::new(r"^continue\b").unwrap(), TokenType::Continue),
+            (Regex::new(r"^break\b").unwrap(), TokenType::Break),
             (Regex::new(r"^return\b").unwrap(), TokenType::Return),
+            (Regex::new(r"^while\b").unwrap(), TokenType::While),
             (Regex::new(r"^void\b").unwrap(), TokenType::Void),
             (Regex::new(r"^goto\b").unwrap(), TokenType::Goto),
             (Regex::new(r"^else\b").unwrap(), TokenType::Else),
             (Regex::new(r"^int\b").unwrap(), TokenType::Int),
+
+            (Regex::new(r"^for\b").unwrap(), TokenType::For),
             (Regex::new(r"^<<=").unwrap(), TokenType::LeftShiftEqual),
             (Regex::new(r"^>>=").unwrap(), TokenType::RightShiftEqual),
             (Regex::new(r"^<<").unwrap(), TokenType::LeftShift),
+            (Regex::new(r"^do\b").unwrap(), TokenType::Do),
             (Regex::new(r"^>>").unwrap(), TokenType::RightShift),
             (Regex::new(r"^\+\+").unwrap(), TokenType::PlusPlus),
             (Regex::new(r"^--").unwrap(), TokenType::HypenHypen),

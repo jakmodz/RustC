@@ -1,7 +1,7 @@
 pub mod error;
 pub mod lexer;
-pub mod token;
 mod span;
+pub mod token;
 use crate::span::Span;
 #[cfg(test)]
 mod tests {
@@ -125,10 +125,7 @@ mod tests {
     fn goto_tokens_test() -> Result<(), LexerError> {
         let mut lex = Lexer::new();
         let tokens = lex.tokenize("goto".to_string())?;
-        test(
-            tokens,
-            vec!["goto".to_string()],
-        );
+        test(tokens, vec!["goto".to_string()]);
 
         Ok(())
     }

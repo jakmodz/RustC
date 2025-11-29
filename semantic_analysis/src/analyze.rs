@@ -3,10 +3,9 @@ use ast::ast::BlockElement;
 use ast::ast::Declaration;
 use ast::ast::Program;
 use ast::ast::*;
-use std::collections::{HashMap,HashSet};
+use std::collections::{HashMap, HashSet};
 use std::iter::Peekable;
 use std::slice::Iter;
-
 
 pub struct SemanticAnalyzer {
     variables: HashMap<String, String>,
@@ -81,7 +80,11 @@ impl SemanticAnalyzer {
                 })
             }
             Stmt::Null => Ok(Stmt::Null),
-            Stmt::If { else_branch,condition,then_branch } => {
+            Stmt::If {
+                else_branch,
+                condition,
+                then_branch,
+            } => {
                 let resolved_condition = self.resolve_expression(condition)?;
                 let resolved_then = Box::new(self.resolve_statement(then_branch)?);
                 let resolved_else = match else_branch {
@@ -94,9 +97,7 @@ impl SemanticAnalyzer {
                     else_branch: resolved_else,
                 })
             }
-            _=>{
-                Ok(stmt.clone())
-            }
+            _ => Ok(stmt.clone()),
         }
     }
     fn resolve_expression(&mut self, expression: &Expression) -> Result<Expression, SemanticError> {
@@ -149,8 +150,8 @@ impl SemanticAnalyzer {
                 var: Box::new(self.resolve_expression(var)?),
                 expr: Box::new(self.resolve_expression(expr)?),
             }),
-            Expression::Conditional {cond,expr1,expr2}=>{
-                let  resolved_cond = self.resolve_expression(cond)?;
+            Expression::Conditional { cond, expr1, expr2 } => {
+                let resolved_cond = self.resolve_expression(cond)?;
                 let resolved_expr1 = self.resolve_expression(expr1)?;
                 let resolved_expr2 = self.resolve_expression(expr2)?;
                 Ok(Expression::Conditional {
@@ -166,10 +167,10 @@ impl SemanticAnalyzer {
     resolving gotos statemtents by checking if the label exists in the current scope
     */
     fn analyze_goto_statements(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
-       let mut iter =ast.function.body.iter().peekable();
-       while let Some(element)  = iter.next() {
+        let mut iter = ast.function.body.iter().peekable();
+        while let Some(element) = iter.next() {
             if let BlockElement::Stmt(stmt) = element {
-               self.resolve_label(stmt,&mut iter)?;
+                self.resolve_label(stmt, &mut iter)?;
             }
         }
         for element in ast.function.body.iter_mut() {
@@ -180,27 +181,39 @@ impl SemanticAnalyzer {
         Ok(())
     }
 
-    fn resolve_label(&mut self, stmt: &Stmt, iter: &mut Peekable<Iter<BlockElement>>) -> Result<(), SemanticError> {
+    fn resolve_label(
+        &mut self,
+        stmt: &Stmt,
+        iter: &mut Peekable<Iter<BlockElement>>,
+    ) -> Result<(), SemanticError> {
         match stmt {
-            Stmt::If {else_branch,then_branch, .. } => {
-              self.resolve_label(then_branch,iter)?;
-              if let Some(else_branch) = else_branch {
-                  self.resolve_label(else_branch,iter)?;
-              }
-               Ok(())
+            Stmt::If {
+                else_branch,
+                then_branch,
+                ..
+            } => {
+                self.resolve_label(then_branch, iter)?;
+                if let Some(else_branch) = else_branch {
+                    self.resolve_label(else_branch, iter)?;
+                }
+                Ok(())
             }
             Stmt::Label(label) => {
                 if self.labels.contains(label) {
-                    return Err(SemanticError::DuplicateLabel {label: label.to_string()});
+                    return Err(SemanticError::DuplicateLabel {
+                        label: label.to_string(),
+                    });
                 }
-                if let Some(c) = iter.peek(){
-                    if matches!(c,&BlockElement::Declaration(_)) {
-                        return Err(
-                            SemanticError::DeclarationInLabel {label: label.to_string()}
-                        )
+                if let Some(c) = iter.peek() {
+                    if matches!(c, &BlockElement::Declaration(_)) {
+                        return Err(SemanticError::DeclarationInLabel {
+                            label: label.to_string(),
+                        });
                     }
-                }else {
-                    return Err(SemanticError::EmptyLabel {label: label.to_string()});
+                } else {
+                    return Err(SemanticError::EmptyLabel {
+                        label: label.to_string(),
+                    });
                 }
                 self.labels.insert(label.to_string());
                 Ok(())
@@ -212,7 +225,9 @@ impl SemanticAnalyzer {
         match stmt {
             Stmt::Goto(label) => {
                 if !self.labels.contains(label) {
-                    return Err(SemanticError::UndeclaredLabel {label: label.to_string()});
+                    return Err(SemanticError::UndeclaredLabel {
+                        label: label.to_string(),
+                    });
                 }
                 Ok(stmt.clone())
             }

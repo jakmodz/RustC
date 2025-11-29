@@ -76,5 +76,5 @@ pub enum Expression {
         cond: Box<Expression>,
         expr1: Box<Expression>,
         expr2: Box<Expression>,
-    }
+    },
 }

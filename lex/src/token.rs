@@ -1,8 +1,8 @@
+use crate::Span;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Formatter;
-use crate::Span;
 lazy_static! {
     static ref OPERATOR_PRECEDENCE: HashMap<TokenType, usize> = {
         let mut map = HashMap::new();
@@ -199,11 +199,11 @@ impl Token {
             Token::LeftShiftEqual(_) => TokenType::LeftShiftEqual,
             Token::RightShiftEqual(_) => TokenType::RightShiftEqual,
             Token::PlusPlus(_) => TokenType::PlusPlus,
-            Token::If(_)=>TokenType::If,
-            Token::Else(_)=>TokenType::Else,
-            Token::QuestionMark(_)=>TokenType::QuestionMark,
-            Token::Colon(_)=>TokenType::Colon,
-            Token::Goto(_)=>TokenType::Goto,
+            Token::If(_) => TokenType::If,
+            Token::Else(_) => TokenType::Else,
+            Token::QuestionMark(_) => TokenType::QuestionMark,
+            Token::Colon(_) => TokenType::Colon,
+            Token::Goto(_) => TokenType::Goto,
         }
     }
 
@@ -240,7 +240,7 @@ impl Token {
             | Token::GreaterEqual(span)
             | Token::Exclamation(span)
             | Token::Void(span)
-            |Token::Equal(span)
+            | Token::Equal(span)
             | Token::PlusEqual(span)
             | Token::HypenEqual(span)
             | Token::StarEqual(span)
@@ -256,7 +256,7 @@ impl Token {
             | Token::Else(span)
             | Token::QuestionMark(span)
             | Token::Colon(span)
-            | Token::Goto(span)=> span
+            | Token::Goto(span) => span,
         }
     }
     pub fn from_string(s: &str) -> Option<TokenType> {
@@ -302,11 +302,11 @@ impl Token {
             "<<=" => Some(TokenType::LeftShiftEqual),
             ">>=" => Some(TokenType::RightShiftEqual),
             "++" => Some(TokenType::PlusPlus),
-            "if"=>Some(TokenType::If),
-            "else"=>Some(TokenType::Else),
-            "goto"=>Some(TokenType::Goto),
-            "?"=>Some(TokenType::QuestionMark),
-            ":"=>Some(TokenType::Colon),
+            "if" => Some(TokenType::If),
+            "else" => Some(TokenType::Else),
+            "goto" => Some(TokenType::Goto),
+            "?" => Some(TokenType::QuestionMark),
+            ":" => Some(TokenType::Colon),
             _ => None,
         }
     }
@@ -384,7 +384,7 @@ impl Token {
                 | TokenType::LessEqual
                 | TokenType::GreaterEqual
                 | TokenType::Equal
-             | TokenType::QuestionMark
+                | TokenType::QuestionMark
         )
     }
     pub fn is_compound_assign(&self) -> bool {
@@ -399,7 +399,6 @@ impl Token {
                 | TokenType::CaretEqual
                 | TokenType::LeftShiftEqual
                 | TokenType::RightShiftEqual
-
         )
     }
 
@@ -457,11 +456,11 @@ impl fmt::Display for Token {
             Token::LeftShiftEqual(_) => write!(f, "<<="),
             Token::RightShiftEqual(_) => write!(f, ">>="),
             Token::PlusPlus(_) => write!(f, "++"),
-            Token::If(_)=>write!(f, "if"),
-            Token::Else(_)=>write!(f, "else"),
-            Token::QuestionMark(_)=>write!(f, "?"),
-            Token::Colon(_)=>write!(f, ":"),
-            Token::Goto(_)=>write!(f, "goto"),
+            Token::If(_) => write!(f, "if"),
+            Token::Else(_) => write!(f, "else"),
+            Token::QuestionMark(_) => write!(f, "?"),
+            Token::Colon(_) => write!(f, ":"),
+            Token::Goto(_) => write!(f, "goto"),
         }
     }
 }

@@ -50,5 +50,4 @@ label1:
         assert_eq!(ast.function.name, String::from("main"));
         assert_eq!(ast.function.body.len(), 3);
     }
-
 }

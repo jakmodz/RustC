@@ -1,8 +1,8 @@
+use crate::Span;
 use crate::error::LexerError;
 use crate::token::{Token, TokenType};
 use lazy_static::lazy_static;
 use regex::Regex;
-use crate::Span;
 
 lazy_static! {
     static ref PATTERNS: Vec<(Regex, TokenType)> = {
@@ -162,7 +162,6 @@ impl Lexer {
             }
 
             let matched = longest_match.unwrap();
-
 
             if matched.1.is_empty() {
                 return Err(LexerError::InvalidToken(

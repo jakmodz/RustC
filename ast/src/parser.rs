@@ -96,7 +96,6 @@ impl Parser {
                 Ok(BlockElement::Declaration(decl))
             }
 
-
             _ => {
                 let stmt = self.parse_stmt()?;
                 Ok(BlockElement::Stmt(stmt))
@@ -153,7 +152,7 @@ impl Parser {
                 self.eat()?;
                 Ok(Stmt::Null)
             }
-            TokenType::If=>{
+            TokenType::If => {
                 self.eat()?;
                 self.excepted_token(TokenType::OpenParen)?;
                 let condition = self.parse_expression(0)?;
@@ -173,18 +172,18 @@ impl Parser {
                     else_branch: else_branch.map(Box::new),
                 })
             }
-            TokenType::Goto=>{
+            TokenType::Goto => {
                 self.eat()?;
                 let name = self.eat()?.to_string();
                 self.excepted_token(TokenType::Semicolon)?;
                 Ok(Stmt::Goto(name))
             }
-            TokenType::Identifier=>{
+            TokenType::Identifier => {
                 if self.peek_next()?.get_token_type() == TokenType::Colon {
                     let name = self.eat()?.to_string();
                     self.eat()?;
                     Ok(Stmt::Label(name))
-                }else{
+                } else {
                     let expr = self.parse_expression(0)?;
                     self.excepted_token(TokenType::Semicolon)?;
                     Ok(Stmt::Expression { expr })
@@ -197,7 +196,6 @@ impl Parser {
             }
         }
     }
-
 
     /*
     Parse Expression
@@ -255,7 +253,7 @@ impl Parser {
                     var: Box::new(left),
                     expr: Box::new(self.parse_expression(op_precedence)?),
                 };
-            }else if next_token.get_token_type()== TokenType::QuestionMark {
+            } else if next_token.get_token_type() == TokenType::QuestionMark {
                 let middle = self.parse_middle()?;
                 let right = self.parse_expression(next_token.get_precedence())?;
                 left = Expression::Conditional {
@@ -263,8 +261,7 @@ impl Parser {
                     expr1: Box::new(middle),
                     expr2: Box::new(right),
                 }
-            }
-            else {
+            } else {
                 let operator = self.eat()?;
                 let op_precedence = operator.get_precedence();
                 let right = self.parse_expression(op_precedence + 1)?;
@@ -279,7 +276,7 @@ impl Parser {
 
         Ok(left)
     }
-    fn parse_middle(&mut self)->Result<Expression, ParserError> {
+    fn parse_middle(&mut self) -> Result<Expression, ParserError> {
         self.eat()?;
         let expr = self.parse_expression(0)?;
         self.excepted_token(TokenType::Colon)?;

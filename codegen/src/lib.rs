@@ -8,6 +8,7 @@ mod tests {
     use crate::ast_parser::AsmParser;
     use semantic_analysis::SemanticAnalyzer;
     use std::io::{Write, stdout};
+    use log::debug;
     use tacky::tacky_parser;
 
     #[test]
@@ -15,8 +16,14 @@ mod tests {
         let source = String::from(
             "
            int main(void) {
-    if (1 + 2 == 4)
-        return 5;
+    int a = 2;
+    int b;
+    {
+        a = -4;
+        int a = 7;
+        b = a + 1;
+    }
+    return b == 8 && a == -4;
 }",
         );
         let mut lexer = lex::lexer::Lexer::new();

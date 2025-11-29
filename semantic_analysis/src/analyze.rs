@@ -6,9 +6,9 @@ use ast::ast::*;
 use std::collections::{HashMap, HashSet};
 use std::iter::Peekable;
 use std::slice::Iter;
-
+use crate::map_entry::VariableEntry;
 pub struct SemanticAnalyzer {
-    variables: HashMap<String, String>,
+    variables: HashMap<String, VariableEntry>,
     labels: HashSet<String>,
     pub var_count: usize,
 }
@@ -21,46 +21,79 @@ impl SemanticAnalyzer {
             var_count: 0,
         }
     }
+    fn copy_variable_map(&self) -> HashMap<String, VariableEntry> {
+        self.variables
+            .iter()
+            .map(|(key, entry)| {
+                (
+                    key.clone(),
+                    VariableEntry {
+                        name: entry.name.clone(),
+                        from_current_block: false,
+                    },
+                )
+            })
+            .collect()
+    }
+    fn resolve_block(&mut self, elements: &[BlockElement]) -> Result<Vec<BlockElement>, SemanticError> {
+        let mut resolved_elements = Vec::new();
+
+        for element in elements.iter() {
+            match element {
+                BlockElement::Declaration(decl) => {
+                    let resolved_decl = self.resolve_declaration(decl)?;
+                    resolved_elements.push(BlockElement::Declaration(resolved_decl));
+                }
+                BlockElement::Stmt(stmt) => {
+                    let resolved_stmt = self.resolve_statement(stmt)?;
+                    resolved_elements.push(BlockElement::Stmt(resolved_stmt));
+                }
+            }
+        }
+
+        Ok(resolved_elements)
+    }
     pub fn analyze(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
         self.variable_resolution(ast)?;
         self.analyze_goto_statements(ast)
     }
     pub fn variable_resolution(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
-        for element in ast.function.body.elements.iter_mut() {
-            match element {
-                BlockElement::Declaration(decl) => {
-                    *element = BlockElement::Declaration(self.analyze_declaration(decl)?);
-                }
-                BlockElement::Stmt(stmt) => {
-                    *element = BlockElement::Stmt(self.resolve_statement(stmt)?);
-                }
-            }
-        }
-        Ok(())
+       ast.function.body.elements = self.resolve_block(&ast.function.body.elements)?;
+       Ok(())
     }
 
-    fn analyze_declaration(&mut self, decl: &Declaration) -> Result<Declaration, SemanticError> {
+    fn resolve_declaration(&mut self, decl: &Declaration) -> Result<Declaration, SemanticError> {
         match decl {
             Declaration::DefineVar {
                 var_name,
                 initializer,
             } => {
-                if self.variables.contains_key(var_name) {
-                    return Err(SemanticError::MultipleDeclaration {
-                        var_name: var_name.to_string(),
-                    });
+                if let Some(entry) = self.variables.get(var_name) {
+                    if entry.from_current_block {
+                        return Err(SemanticError::MultipleDeclaration {
+                            var_name: var_name.to_string(),
+                        });
+                    }
                 }
+
                 let unique_name = format!("{}.{}", var_name, self.var_count);
                 self.var_count += 1;
-                self.variables
-                    .insert(var_name.to_string(), unique_name.clone());
-                let mut init = initializer.clone();
-                if let Some(expr) = initializer {
-                    init = Some(self.resolve_expression(expr)?);
-                }
+
+                self.variables.insert(
+                    var_name.to_string(),
+                    VariableEntry::new(unique_name.clone(), true)
+                );
+
+                let resolved_init = match initializer {
+                    Some(expr) => Some(self.resolve_expression(expr)?),
+                    None => None,
+                };
+
+
+
                 Ok(Declaration::DefineVar {
                     var_name: unique_name,
-                    initializer: init,
+                    initializer: resolved_init,
                 })
             }
         }
@@ -97,9 +130,26 @@ impl SemanticAnalyzer {
                     else_branch: resolved_else,
                 })
             }
+            Stmt::Compound {block}=>{
+                let saved_variables = self.variables.clone();
+
+                for entry in self.variables.values_mut() {
+                    entry.from_current_block = false;
+                }
+
+                let resolved_block = self.resolve_block(&block.elements)?;
+
+                self.variables = saved_variables;
+
+                Ok(Stmt::Compound {
+                    block: Block::new(resolved_block)
+                })
+            }
+
             _ => Ok(stmt.clone()),
         }
     }
+
     fn resolve_expression(&mut self, expression: &Expression) -> Result<Expression, SemanticError> {
         match expression {
             Expression::Assignment {
@@ -129,7 +179,7 @@ impl SemanticAnalyzer {
             Expression::Var(var_name) => {
                 if self.variables.contains_key(var_name) {
                     Ok(Expression::Var(
-                        self.variables.get(var_name).unwrap().to_string(),
+                        self.variables.get(var_name).unwrap().name.to_string(),
                     ))
                 } else {
                     Err(SemanticError::UndeclaredVariable {

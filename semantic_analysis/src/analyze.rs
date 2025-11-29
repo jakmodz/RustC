@@ -21,20 +21,7 @@ impl SemanticAnalyzer {
             var_count: 0,
         }
     }
-    fn copy_variable_map(&self) -> HashMap<String, VariableEntry> {
-        self.variables
-            .iter()
-            .map(|(key, entry)| {
-                (
-                    key.clone(),
-                    VariableEntry {
-                        name: entry.name.clone(),
-                        from_current_block: false,
-                    },
-                )
-            })
-            .collect()
-    }
+   
     fn resolve_block(&mut self, elements: &[BlockElement]) -> Result<Vec<BlockElement>, SemanticError> {
         let mut resolved_elements = Vec::new();
 

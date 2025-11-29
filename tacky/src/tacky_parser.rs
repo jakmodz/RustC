@@ -26,9 +26,7 @@ impl TackyParser {
     pub fn emit_tacky(&mut self, ast: Program) -> tacky::Program {
         let mut body = Vec::new();
 
-        for element in ast.function.body.elements {
-            self.convert_block_element(element, &mut body);
-        }
+        self.convert_block(ast.function.body, &mut body);
         body.push(TackyInstruction::Return(Constant(0)));
         tacky::Program {
             function: TackyFunction {
@@ -49,6 +47,15 @@ impl TackyParser {
             BlockElement::Declaration(decl) => {
                 self.convert_declaration(decl, body);
             }
+        }
+    }
+    fn convert_block(
+        &mut self,
+        block: ast::ast::Block,
+        body: &mut Vec<tacky::TackyInstruction>,
+    ) {
+        for element in block.elements {
+            self.convert_block_element(element, body);
         }
     }
     fn convert_declaration(&mut self, decl: Declaration, body: &mut Vec<tacky::TackyInstruction>) {
@@ -119,7 +126,7 @@ impl TackyParser {
                 body.push(TackyInstruction::Label(label));
             }
             Stmt::Compound { block } => {
-                todo!()
+                self.convert_block(block, body);
             }
         }
     }

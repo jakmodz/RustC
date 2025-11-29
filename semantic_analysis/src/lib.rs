@@ -1,6 +1,6 @@
 mod analyze;
-mod semantic_error;
 mod map_entry;
+mod semantic_error;
 
 pub use analyze::SemanticAnalyzer;
 pub use semantic_error::SemanticError;

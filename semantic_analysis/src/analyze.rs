@@ -1,4 +1,5 @@
 use crate::SemanticError;
+use crate::map_entry::VariableEntry;
 use ast::ast::BlockElement;
 use ast::ast::Declaration;
 use ast::ast::Program;
@@ -6,7 +7,6 @@ use ast::ast::*;
 use std::collections::{HashMap, HashSet};
 use std::iter::Peekable;
 use std::slice::Iter;
-use crate::map_entry::VariableEntry;
 pub struct SemanticAnalyzer {
     variables: HashMap<String, VariableEntry>,
     labels: HashSet<String>,
@@ -21,8 +21,11 @@ impl SemanticAnalyzer {
             var_count: 0,
         }
     }
-   
-    fn resolve_block(&mut self, elements: &[BlockElement]) -> Result<Vec<BlockElement>, SemanticError> {
+
+    fn resolve_block(
+        &mut self,
+        elements: &[BlockElement],
+    ) -> Result<Vec<BlockElement>, SemanticError> {
         let mut resolved_elements = Vec::new();
 
         for element in elements.iter() {
@@ -45,8 +48,8 @@ impl SemanticAnalyzer {
         self.analyze_goto_statements(ast)
     }
     pub fn variable_resolution(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
-       ast.function.body.elements = self.resolve_block(&ast.function.body.elements)?;
-       Ok(())
+        ast.function.body.elements = self.resolve_block(&ast.function.body.elements)?;
+        Ok(())
     }
 
     fn resolve_declaration(&mut self, decl: &Declaration) -> Result<Declaration, SemanticError> {
@@ -68,15 +71,13 @@ impl SemanticAnalyzer {
 
                 self.variables.insert(
                     var_name.to_string(),
-                    VariableEntry::new(unique_name.clone(), true)
+                    VariableEntry::new(unique_name.clone(), true),
                 );
 
                 let resolved_init = match initializer {
                     Some(expr) => Some(self.resolve_expression(expr)?),
                     None => None,
                 };
-
-
 
                 Ok(Declaration::DefineVar {
                     var_name: unique_name,
@@ -117,7 +118,7 @@ impl SemanticAnalyzer {
                     else_branch: resolved_else,
                 })
             }
-            Stmt::Compound {block}=>{
+            Stmt::Compound { block } => {
                 let saved_variables = self.variables.clone();
 
                 for entry in self.variables.values_mut() {
@@ -129,7 +130,7 @@ impl SemanticAnalyzer {
                 self.variables = saved_variables;
 
                 Ok(Stmt::Compound {
-                    block: Block::new(resolved_block)
+                    block: Block::new(resolved_block),
                 })
             }
 

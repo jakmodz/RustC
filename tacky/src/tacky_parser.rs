@@ -49,11 +49,7 @@ impl TackyParser {
             }
         }
     }
-    fn convert_block(
-        &mut self,
-        block: ast::ast::Block,
-        body: &mut Vec<tacky::TackyInstruction>,
-    ) {
+    fn convert_block(&mut self, block: ast::ast::Block, body: &mut Vec<tacky::TackyInstruction>) {
         for element in block.elements {
             self.convert_block_element(element, body);
         }

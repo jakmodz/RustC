@@ -189,7 +189,7 @@ impl Parser {
                     Ok(Stmt::Expression { expr })
                 }
             }
-            TokenType::OpenBrace=>{
+            TokenType::OpenBrace => {
                 self.eat()?;
                 let mut block_elements = Vec::new();
                 while self.peek()?.get_token_type() != TokenType::CloseBrace {

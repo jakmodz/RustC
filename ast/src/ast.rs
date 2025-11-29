@@ -39,7 +39,7 @@ pub enum Stmt {
         else_branch: Option<Box<Stmt>>,
     },
     Compound {
-        block: Block
+        block: Block,
     },
     Goto(String),
     Label(String),

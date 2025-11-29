@@ -1,7 +1,8 @@
 use crate::tacky;
 use crate::tacky::Val::Constant;
 use crate::tacky::{BinaryOp, TackyFunction, TackyInstruction, Val};
-use ast::ast::{Expression, Program};
+
+use ast::ast::{BlockElement, Declaration, Expression ,Program, Stmt};
 use lex::token::TokenType;
 
 pub struct TackyParser {
@@ -38,25 +39,25 @@ impl TackyParser {
     }
     fn convert_block_element(
         &mut self,
-        element: ast::ast::BlockElement,
+        element: BlockElement,
         body: &mut Vec<tacky::TackyInstruction>,
     ) {
         match element {
-            ast::ast::BlockElement::Stmt(stmt) => {
+            BlockElement::Stmt(stmt) => {
                 self.convert_stmt(stmt, body);
             }
-            ast::ast::BlockElement::Declaration(decl) => {
+            BlockElement::Declaration(decl) => {
                 self.convert_declaration(decl, body);
             }
         }
     }
     fn convert_declaration(
         &mut self,
-        decl: ast::ast::Declaration,
+        decl: Declaration,
         body: &mut Vec<tacky::TackyInstruction>,
     ) {
         match decl {
-            ast::ast::Declaration::DefineVar {
+            Declaration::DefineVar {
                 var_name,
                 initializer,
             } => {
@@ -70,17 +71,17 @@ impl TackyParser {
             }
         }
     }
-    fn convert_stmt(&mut self, stmt: ast::ast::Stmt, body: &mut Vec<tacky::TackyInstruction>) {
+    fn convert_stmt(&mut self, stmt: Stmt, body: &mut Vec<tacky::TackyInstruction>) {
         match stmt {
-            ast::ast::Stmt::Return { expr } => {
+            Stmt::Return { expr } => {
                 let val = self.convert_expr(expr, body);
                 body.push(tacky::TackyInstruction::Return(val));
             }
-            ast::ast::Stmt::Expression { expr } => {
+            Stmt::Expression { expr } => {
                 self.convert_expr(expr, body);
             }
-            ast::ast::Stmt::Null => {}
-            ast::ast::Stmt::If { condition,then_branch,else_branch } => {
+            Stmt::Null => {}
+            Stmt::If { condition,then_branch,else_branch } => {
                 let c = self.convert_expr(condition, body);
                 if let Some(else_branch) = else_branch {
                     let else_label = format!("else_label_{}", self.label_counter);
@@ -101,23 +102,29 @@ impl TackyParser {
                     body.push(TackyInstruction::Label(end_label));
 
                 }
+            },
+            Stmt::Goto(label)=>{
+                body.push(TackyInstruction::Jump {target: label.clone()});
+            }
+            Stmt::Label(label) =>{
+                body.push(TackyInstruction::Label(label));
             }
         }
     }
     fn convert_expr(
         &mut self,
-        expr: ast::ast::Expression,
+        expr: Expression,
         instructions: &mut Vec<TackyInstruction>,
     ) -> tacky::Val {
         match expr {
 
-            ast::ast::Expression::Assignment {
+            Expression::Assignment {
                 expr_to,
                 initializer,
             } => {
                 let result = self.convert_expr(*initializer, instructions);
                 match expr_to.as_ref() {
-                    ast::ast::Expression::Var(name) => {
+                    Expression::Var(name) => {
                         instructions.push(TackyInstruction::Copy {
                             src: result,
                             dst: Val::Var(name.clone()),
@@ -127,7 +134,7 @@ impl TackyParser {
                     _ => unreachable!(),
                 }
             }
-            ast::ast::Expression::CompoundAssign { op, var, expr } => {
+            Expression::CompoundAssign { op, var, expr } => {
                 let rhs = self.convert_expr(*expr, instructions);
                 let binary_op = match op.get_token_type() {
                     TokenType::PlusEqual => BinaryOp::Add,
@@ -143,7 +150,7 @@ impl TackyParser {
                     _ => panic!("Unsupported compound assignment"),
                 };
                 let name = match var.as_ref() {
-                    ast::ast::Expression::Var(name) => name.clone(),
+                    Expression::Var(name) => name.clone(),
                     _ => panic!("Compound assignment target must be a variable"),
                 };
 
@@ -158,15 +165,15 @@ impl TackyParser {
 
                 lhs
             }
-            ast::ast::Expression::Var(name) => Val::Var(name),
-            ast::ast::Expression::Increment { expr, pre } => {
+            Expression::Var(name) => Val::Var(name),
+            Expression::Increment { expr, pre } => {
                 self.convert_inc_dec(expr, instructions, pre, BinaryOp::Add)
             }
-            ast::ast::Expression::Decrement { expr, pre } => {
+            Expression::Decrement { expr, pre } => {
                 self.convert_inc_dec(expr, instructions, pre, BinaryOp::Subtract)
             }
-            ast::ast::Expression::Constant(c) => tacky::Val::Constant(c),
-            ast::ast::Expression::UnaryOP { op, expr } => {
+            Expression::Constant(c) => tacky::Val::Constant(c),
+            Expression::UnaryOP { op, expr } => {
                 let src = self.convert_expr(*expr, instructions);
                 let dst = Val::Var(self.make_temporary());
                 let unary_op = match op.get_token_type() {
@@ -183,8 +190,8 @@ impl TackyParser {
                 });
                 dst
             }
-            ast::ast::Expression::Grouping { expr } => self.convert_expr(*expr, instructions),
-            ast::ast::Expression::Binary { op, left, right } => {
+            Expression::Grouping { expr } => self.convert_expr(*expr, instructions),
+            Expression::Binary { op, left, right } => {
                 match op.get_token_type() {
                     TokenType::AmpersandAmpersand => {
                         let result_var = self.make_temporary();
@@ -301,7 +308,7 @@ impl TackyParser {
                 });
                 dst
             },
-            ast::ast::Expression::Conditional { cond,expr1, expr2 } => {
+            Expression::Conditional { cond,expr1, expr2 } => {
                 let end_label = format!("end_label_{}", self.label_counter);
                 self.label_counter += 1;
                 let e2 = format!("e2_label_{}", self.label_counter);
@@ -366,8 +373,8 @@ impl TackyParser {
     }
     fn get_var_name(&mut self, expr: &Expression) -> Option<String> {
         match expr {
-            ast::ast::Expression::Grouping { expr } => self.get_var_name(expr),
-            ast::ast::Expression::Var(name) => Some(name.clone()),
+            Expression::Grouping { expr } => self.get_var_name(expr),
+            Expression::Var(name) => Some(name.clone()),
             _ => None,
         }
     }

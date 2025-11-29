@@ -30,7 +30,7 @@ pub enum Stmt {
         else_branch: Option<Box<Stmt>>,
     },
     Goto(String),
-    GotoLabel(String),
+    Label(String),
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum Declaration {

@@ -125,7 +125,6 @@ impl Lexer {
         let mut remaining = input.clone();
 
         while !remaining.is_empty() {
-            // Fixed whitespace handling
             if let Some(ch) = remaining.chars().next() {
                 if ch.is_whitespace() {
                     if ch == '\n' {

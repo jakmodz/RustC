@@ -3,10 +3,14 @@ use ast::ast::BlockElement;
 use ast::ast::Declaration;
 use ast::ast::Program;
 use ast::ast::*;
-use std::collections::HashMap;
+use std::collections::{HashMap,HashSet};
+use std::iter::Peekable;
+use std::slice::Iter;
+
 
 pub struct SemanticAnalyzer {
     variables: HashMap<String, String>,
+    labels: HashSet<String>,
     pub var_count: usize,
 }
 
@@ -14,11 +18,15 @@ impl SemanticAnalyzer {
     pub fn new() -> Self {
         Self {
             variables: HashMap::new(),
+            labels: HashSet::new(),
             var_count: 0,
         }
     }
-
-    pub fn semantic_analysis(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
+    pub fn analyze(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
+        self.variable_resolution(ast)?;
+        self.analyze_goto_statements(ast)
+    }
+    pub fn variable_resolution(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
         for element in ast.function.body.iter_mut() {
             match element {
                 BlockElement::Declaration(decl) => {
@@ -86,6 +94,9 @@ impl SemanticAnalyzer {
                     else_branch: resolved_else,
                 })
             }
+            _=>{
+                Ok(stmt.clone())
+            }
         }
     }
     fn resolve_expression(&mut self, expression: &Expression) -> Result<Expression, SemanticError> {
@@ -149,6 +160,63 @@ impl SemanticAnalyzer {
                 })
             }
             _ => Ok(expression.clone()),
+        }
+    }
+    /*
+    resolving gotos statemtents by checking if the label exists in the current scope
+    */
+    fn analyze_goto_statements(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
+       let mut iter =ast.function.body.iter().peekable();
+       while let Some(element)  = iter.next() {
+            if let BlockElement::Stmt(stmt) = element {
+               self.resolve_label(stmt,&mut iter)?;
+            }
+        }
+        for element in ast.function.body.iter_mut() {
+            if let BlockElement::Stmt(stmt) = element {
+                self.resolve_goto(stmt)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn resolve_label(&mut self, stmt: &Stmt, iter: &mut Peekable<Iter<BlockElement>>) -> Result<(), SemanticError> {
+        match stmt {
+            Stmt::If {else_branch,then_branch, .. } => {
+              self.resolve_label(then_branch,iter)?;
+              if let Some(else_branch) = else_branch {
+                  self.resolve_label(else_branch,iter)?;
+              }
+               Ok(())
+            }
+            Stmt::Label(label) => {
+                if self.labels.contains(label) {
+                    return Err(SemanticError::DuplicateLabel {label: label.to_string()});
+                }
+                if let Some(c) = iter.peek(){
+                    if matches!(c,&BlockElement::Declaration(_)) {
+                        return Err(
+                            SemanticError::DeclarationInLabel {label: label.to_string()}
+                        )
+                    }
+                }else {
+                    return Err(SemanticError::EmptyLabel {label: label.to_string()});
+                }
+                self.labels.insert(label.to_string());
+                Ok(())
+            }
+            _ => Ok(()),
+        }
+    }
+    fn resolve_goto(&self, stmt: &Stmt) -> Result<Stmt, SemanticError> {
+        match stmt {
+            Stmt::Goto(label) => {
+                if !self.labels.contains(label) {
+                    return Err(SemanticError::UndeclaredLabel {label: label.to_string()});
+                }
+                Ok(stmt.clone())
+            }
+            _ => Ok(stmt.clone()),
         }
     }
 }

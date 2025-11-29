@@ -97,7 +97,7 @@ fn run() -> Result<(), CompilerError> {
         Semantic Validation Stage
     */
     let mut analyzer = SemanticAnalyzer::new();
-    analyzer.semantic_analysis(&mut ast)?;
+    analyzer.analyze(&mut ast)?;
 
     if args.validate {
         return Ok(());

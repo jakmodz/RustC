@@ -1,4 +1,3 @@
-use crate::parser::Token::Identifier;
 use crate::ast::*;
 use crate::parser_error::ParserError;
 use lex::token;
@@ -181,12 +180,15 @@ impl Parser {
                 Ok(Stmt::Goto(name))
             }
             TokenType::Identifier=>{
-                let name = match self.eat()? {
-                    Token::Identifier(name, _span) => name,
-                    _ => unreachable!(),
-                };
-                self.excepted_token(TokenType::Colon)?;
-                Ok(Stmt::GotoLabel(name))
+                if self.peek_next()?.get_token_type() == TokenType::Colon {
+                    let name = self.eat()?.to_string();
+                    self.eat()?;
+                    Ok(Stmt::Label(name))
+                }else{
+                    let expr = self.parse_expression(0)?;
+                    self.excepted_token(TokenType::Semicolon)?;
+                    Ok(Stmt::Expression { expr })
+                }
             }
             _ => {
                 let expr = self.parse_expression(0)?;

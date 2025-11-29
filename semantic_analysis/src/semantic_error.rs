@@ -8,4 +8,15 @@ pub enum SemanticError {
     UndeclaredVariable { var_name: String },
     #[error("Invalid left value in assignment: '{invalid}'")]
     InvalidLeftValue { invalid: String },
+    /*
+     Labels Errors
+    */
+    #[error("Undeclared label '{label}'")]
+    UndeclaredLabel { label: String },
+    #[error("Duplicate label declaration '{label}'")]
+    DuplicateLabel { label: String },
+    #[error("No statement in label '{label}'")]
+    EmptyLabel { label: String },
+    #[error("Declaration in label '{label}'")]
+    DeclarationInLabel { label: String },
 }

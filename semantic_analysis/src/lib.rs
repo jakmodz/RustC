@@ -11,7 +11,7 @@ mod tests {
         let mut parser = ast::parser::Parser::new(tokens);
         let mut ast = parser.parse().unwrap();
         let mut analyzer = SemanticAnalyzer::new();
-        analyzer.semantic_analysis(&mut ast)
+        analyzer.variable_resolution(&mut ast)
     }
 
     use super::*;

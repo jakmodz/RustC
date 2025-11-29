@@ -24,7 +24,7 @@ mod tests {
         let mut parser = ast::parser::Parser::new(tokens);
         let mut ast = parser.parse().unwrap();
         let mut analyzer = SemanticAnalyzer::new();
-        analyzer.semantic_analysis(&mut ast).unwrap();
+        analyzer.variable_resolution(&mut ast).unwrap();
         println!("{:#?}", ast);
         let tacky = tacky_parser::TackyParser::new(analyzer.var_count).emit_tacky(ast);
         println!("{:#?}", tacky);

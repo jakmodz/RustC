@@ -32,7 +32,7 @@ mod tests {
         let mut parser = crate::parser::Parser::new(tokens);
         let ast = parser.parse().unwrap();
         assert_eq!(ast.function.name, String::from("main"));
-        assert_eq!(ast.function.body.len(), 3);
+        assert_eq!(ast.function.body.elements.len(), 3);
     }
     #[test]
     fn goto_label() {
@@ -48,6 +48,6 @@ label1:
         let mut parser = crate::parser::Parser::new(tokens);
         let ast = parser.parse().unwrap();
         assert_eq!(ast.function.name, String::from("main"));
-        assert_eq!(ast.function.body.len(), 3);
+        assert_eq!(ast.function.body.elements.len(), 3);
     }
 }

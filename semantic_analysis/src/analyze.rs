@@ -26,7 +26,7 @@ impl SemanticAnalyzer {
         self.analyze_goto_statements(ast)
     }
     pub fn variable_resolution(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
-        for element in ast.function.body.iter_mut() {
+        for element in ast.function.body.elements.iter_mut() {
             match element {
                 BlockElement::Declaration(decl) => {
                     *element = BlockElement::Declaration(self.analyze_declaration(decl)?);
@@ -167,13 +167,13 @@ impl SemanticAnalyzer {
     resolving gotos statemtents by checking if the label exists in the current scope
     */
     fn analyze_goto_statements(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
-        let mut iter = ast.function.body.iter().peekable();
+        let mut iter = ast.function.body.elements.iter().peekable();
         while let Some(element) = iter.next() {
             if let BlockElement::Stmt(stmt) = element {
                 self.resolve_label(stmt, &mut iter)?;
             }
         }
-        for element in ast.function.body.iter_mut() {
+        for element in ast.function.body.elements.iter_mut() {
             if let BlockElement::Stmt(stmt) = element {
                 self.resolve_goto(stmt)?;
             }

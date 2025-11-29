@@ -8,12 +8,21 @@ pub struct Program {
 #[derive(Debug, Clone)]
 pub struct Function {
     pub name: String,
-    pub body: Vec<BlockElement>,
+    pub body: Block,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum BlockElement {
     Stmt(Stmt),
     Declaration(Declaration),
+}
+#[derive(Debug, Clone, PartialEq)]
+pub struct Block {
+    pub elements: Vec<BlockElement>,
+}
+impl Block {
+    pub fn new(elements: Vec<BlockElement>) -> Self {
+        Self { elements }
+    }
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {
@@ -28,6 +37,9 @@ pub enum Stmt {
         condition: Expression,
         then_branch: Box<Stmt>,
         else_branch: Option<Box<Stmt>>,
+    },
+    Compound {
+        block: Block
     },
     Goto(String),
     Label(String),

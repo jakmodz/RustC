@@ -26,7 +26,7 @@ impl TackyParser {
     pub fn emit_tacky(&mut self, ast: Program) -> tacky::Program {
         let mut body = Vec::new();
 
-        for element in ast.function.body {
+        for element in ast.function.body.elements {
             self.convert_block_element(element, &mut body);
         }
         body.push(TackyInstruction::Return(Constant(0)));
@@ -117,6 +117,9 @@ impl TackyParser {
             }
             Stmt::Label(label) => {
                 body.push(TackyInstruction::Label(label));
+            }
+            Stmt::Compound { block } => {
+                todo!()
             }
         }
     }

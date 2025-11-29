@@ -144,6 +144,6 @@ fn run() -> Result<(), CompilerError> {
         eprintln!("gcc linking failed for {:?}", asm_path);
         exit(1);
     }
-
+    //TODO: update readme
     Ok(())
 }

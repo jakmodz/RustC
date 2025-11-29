@@ -84,7 +84,7 @@ impl Parser {
         Ok(Program {
             function: Function {
                 name: "main".to_string(),
-                body: function_body,
+                body: Block::new(function_body),
             },
         })
     }
@@ -188,6 +188,18 @@ impl Parser {
                     self.excepted_token(TokenType::Semicolon)?;
                     Ok(Stmt::Expression { expr })
                 }
+            }
+            TokenType::OpenBrace=>{
+                self.eat()?;
+                let mut block_elements = Vec::new();
+                while self.peek()?.get_token_type() != TokenType::CloseBrace {
+                    let block_item = self.parse_block_element()?;
+                    block_elements.push(block_item);
+                }
+                self.excepted_token(TokenType::CloseBrace)?;
+                Ok(Stmt::Compound {
+                    block: Block::new(block_elements),
+                })
             }
             _ => {
                 let expr = self.parse_expression(0)?;

@@ -1,5 +1,11 @@
 use lex::token::Token;
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum Annotation{
+    None,
+    LoopLabel(String),
+}
+
 #[derive(Debug, Clone)]
 pub struct Program {
     pub function: Function,
@@ -25,6 +31,11 @@ impl Block {
     }
 }
 #[derive(Debug, Clone, PartialEq)]
+pub enum ForInit {
+    Declaration(Declaration),
+    Expression(Option<Expression>),
+}
+#[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {
     Return {
         expr: Expression,
@@ -37,6 +48,25 @@ pub enum Stmt {
         condition: Expression,
         then_branch: Box<Stmt>,
         else_branch: Option<Box<Stmt>>,
+    },
+    Break(Annotation),
+    Continue(Annotation),
+    While {
+        condition: Expression,
+        body: Box<Stmt>,
+        annotation: Annotation
+    },
+    DoWhile{
+        body: Box<Stmt>,
+        condition: Expression,
+        annotation: Annotation
+    },
+    For {
+        init: ForInit,
+        condition: Option<Expression>,
+        increment: Option<Expression>,
+        body: Box<Stmt>,
+        annotation: Annotation
     },
     Compound {
         block: Block,

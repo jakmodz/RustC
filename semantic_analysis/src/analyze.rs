@@ -7,10 +7,12 @@ use ast::ast::*;
 use std::collections::{HashMap, HashSet};
 use std::iter::Peekable;
 use std::slice::Iter;
+
 pub struct SemanticAnalyzer {
     variables: HashMap<String, VariableEntry>,
     labels: HashSet<String>,
     pub var_count: usize,
+    pub loop_count: usize,
 }
 
 impl SemanticAnalyzer {
@@ -19,6 +21,7 @@ impl SemanticAnalyzer {
             variables: HashMap::new(),
             labels: HashSet::new(),
             var_count: 0,
+            loop_count: 0,
         }
     }
 
@@ -43,10 +46,14 @@ impl SemanticAnalyzer {
 
         Ok(resolved_elements)
     }
+
     pub fn analyze(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
         self.variable_resolution(ast)?;
-        self.analyze_goto_statements(ast)
+        self.analyze_goto_statements(ast)?;
+        self.analyze_loop_labels(ast)?;
+        Ok(())
     }
+
     pub fn variable_resolution(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
         ast.function.body.elements = self.resolve_block(&ast.function.body.elements)?;
         Ok(())
@@ -86,6 +93,7 @@ impl SemanticAnalyzer {
             }
         }
     }
+
     fn resolve_statement(&mut self, stmt: &Stmt) -> Result<Stmt, SemanticError> {
         match stmt {
             Stmt::Expression { expr } => {
@@ -133,7 +141,53 @@ impl SemanticAnalyzer {
                     block: Block::new(resolved_block),
                 })
             }
+            Stmt::While { body, condition, .. } => {
+                let resolved_condition = self.resolve_expression(condition)?;
+                let resolved_body = Box::new(self.resolve_statement(body)?);
+                Ok(Stmt::While {
+                    condition: resolved_condition,
+                    body: resolved_body,
+                    annotation: Annotation::None,
+                })
+            }
+            Stmt::DoWhile { body, condition, .. } => {
+                let resolved_condition = self.resolve_expression(condition)?;
+                let resolved_body = Box::new(self.resolve_statement(body)?);
+                Ok(Stmt::DoWhile {
+                    body: resolved_body,
+                    condition: resolved_condition,
+                    annotation: Annotation::None,
+                })
+            }
+            Stmt::For {
+                condition,
+                body,
+                init,
+                increment,
+                ..
+            } => {
 
+                let saved_variables = self.variables.clone();
+
+                for entry in self.variables.values_mut() {
+                    entry.from_current_block = false;
+                }
+
+                let resolver_init = self.resolve_for_init(init)?;
+                let resolved_condition = self.resolve_optional_expr(condition)?;
+                let resolved_increment = self.resolve_optional_expr(increment)?;
+                let resolved_body = Box::new(self.resolve_statement(body)?);
+
+                self.variables = saved_variables;
+
+                Ok(Stmt::For {
+                    init: resolver_init,
+                    condition: resolved_condition,
+                    increment: resolved_increment,
+                    body: resolved_body,
+                    annotation: Annotation::None,
+                })
+            }
             _ => Ok(stmt.clone()),
         }
     }
@@ -201,9 +255,30 @@ impl SemanticAnalyzer {
             _ => Ok(expression.clone()),
         }
     }
-    /*
-    resolving gotos statemtents by checking if the label exists in the current scope
-    */
+
+    fn resolve_for_init(&mut self, init: &ForInit) -> Result<ForInit, SemanticError> {
+        match init {
+            ForInit::Declaration(decl) => Ok(ForInit::Declaration(self.resolve_declaration(decl)?)),
+            ForInit::Expression(expr_opt) => {
+                let resolved_expr_opt = match expr_opt {
+                    Some(expr) => Some(self.resolve_expression(expr)?),
+                    None => None,
+                };
+                Ok(ForInit::Expression(resolved_expr_opt))
+            }
+        }
+    }
+
+    fn resolve_optional_expr(
+        &mut self,
+        expr: &Option<Expression>,
+    ) -> Result<Option<Expression>, SemanticError> {
+        match expr {
+            Some(expr) => Ok(Some(self.resolve_expression(expr)?)),
+            None => Ok(None),
+        }
+    }
+
     fn analyze_goto_statements(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
         let mut iter = ast.function.body.elements.iter().peekable();
         while let Some(element) = iter.next() {
@@ -259,6 +334,7 @@ impl SemanticAnalyzer {
             _ => Ok(()),
         }
     }
+
     fn resolve_goto(&self, stmt: &Stmt) -> Result<Stmt, SemanticError> {
         match stmt {
             Stmt::Goto(label) => {
@@ -270,6 +346,92 @@ impl SemanticAnalyzer {
                 Ok(stmt.clone())
             }
             _ => Ok(stmt.clone()),
+        }
+    }
+
+
+    fn make_loop_label(&mut self) -> String {
+        let label = format!("_loop_{}", self.loop_count);
+        self.loop_count += 1;
+        label
+    }
+
+    fn analyze_loop_labels(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
+        for element in ast.function.body.elements.iter_mut() {
+            if let BlockElement::Stmt(stmt) = element {
+                self.label_loops(stmt, None)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn label_loops(
+        &mut self,
+        stmt: &mut Stmt,
+        current_label: Option<String>,
+    ) -> Result<(), SemanticError> {
+        match stmt {
+            Stmt::Break(label) => {
+                if let Some(loop_label) = current_label {
+                    *label = Annotation::LoopLabel(loop_label);
+                    Ok(())
+                } else {
+                    Err(SemanticError::JumpStmtNotInLoop {
+                        stmt: "Break".to_string(),
+                    })
+                }
+            }
+            Stmt::Continue(label) => {
+                if let Some(loop_label) = current_label {
+                    *label = Annotation::LoopLabel(loop_label);
+                    Ok(())
+                } else {
+                    Err(SemanticError::JumpStmtNotInLoop {
+                        stmt: "Continue".to_string(),
+                    })
+                }
+            }
+            Stmt::While {
+                body, annotation, ..
+            } => {
+                let loop_label = self.make_loop_label();
+                *annotation = Annotation::LoopLabel(loop_label.clone());
+                self.label_loops(body, Some(loop_label))
+            }
+            Stmt::DoWhile {
+                body, annotation, ..
+            } => {
+                let loop_label = self.make_loop_label();
+                *annotation = Annotation::LoopLabel(loop_label.clone());
+                self.label_loops(body, Some(loop_label))
+            }
+            Stmt::For {
+                body, annotation, ..
+            } => {
+                let loop_label = self.make_loop_label();
+                *annotation = Annotation::LoopLabel(loop_label.clone());
+                self.label_loops(body, Some(loop_label))
+            }
+            Stmt::If {
+                else_branch,
+                then_branch,
+                ..
+            } => {
+                self.label_loops(then_branch, current_label.clone())?;
+                if let Some(else_branch) = else_branch {
+                    self.label_loops(else_branch, current_label)?;
+                }
+                Ok(())
+            }
+            Stmt::Compound { block } => {
+                for element in block.elements.iter_mut() {
+                    if let BlockElement::Stmt(stmt) = element {
+                        self.label_loops(stmt, current_label.clone())?;
+                    }
+                }
+                Ok(())
+            }
+            _ => Ok(()),
         }
     }
 }

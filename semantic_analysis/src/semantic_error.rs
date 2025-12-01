@@ -19,4 +19,9 @@ pub enum SemanticError {
     EmptyLabel { label: String },
     #[error("Declaration in label '{label}'")]
     DeclarationInLabel { label: String },
+    /*
+    Syntax Errors
+    */
+    #[error("{stmt} statement not within a loop")]
+    JumpStmtNotInLoop{stmt: String},
 }

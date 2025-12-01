@@ -133,7 +133,7 @@ fn run() -> Result<(), CompilerError> {
     let output_path = parent.join(stem);
     let file_out = File::create(&asm_path)?;
     let out: Vec<Box<dyn Write>> = vec![Box::new(stdout()), Box::new(file_out)];
-
+    //TODO: end tacky generation. Making files more independent
     asm_gen.write(asm_ast, out)?;
     let status = std::process::Command::new("gcc")
         .arg("-o")

@@ -1,6 +1,7 @@
 use crate::tacky;
 use crate::tacky::Val::Constant;
 use crate::tacky::{BinaryOp, TackyFunction, TackyInstruction, Val};
+use crate::label_generator::LabelGenerator;
 
 use ast::ast::{Annotation, BlockElement, Declaration, Expression, Program, Stmt};
 use lex::token::TokenType;
@@ -10,14 +11,14 @@ use crate::instruction_builder::InstructionBuilder;
 
 pub struct TackyParser {
     pub var_counter: usize,
-    pub label_counter: usize,
+    pub label_generator: LabelGenerator,
 }
 
 impl TackyParser {
     pub fn new(var_counter: usize) -> Self {
         Self {
             var_counter,
-            label_counter: 0,
+            label_generator: LabelGenerator::new(),
         }
     }
 
@@ -77,7 +78,7 @@ impl TackyParser {
     }
 
 
-    
+
 
     pub(crate) fn convert_inc_dec(
         &mut self,

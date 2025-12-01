@@ -7,7 +7,7 @@ use crate::tacky::Val::Constant;
 use crate::tacky_parser::TackyParser;
 
 pub trait ExpressionConverter {
-    fn convert_expr(&mut self, expr: Expression, instructions: &mut Vec<TackyInstruction>) -> tacky::Val;
+    fn convert_expr(&mut self, expr: Expression, instructions: &mut Vec<TackyInstruction>) -> Val;
 }
 
 impl ExpressionConverter for TackyParser {
@@ -60,7 +60,7 @@ impl ExpressionConverter for TackyParser {
             Expression::Decrement { expr, pre } => {
                 self.convert_inc_dec(expr, instructions, pre, BinaryOp::Subtract)
             }
-            Expression::Constant(c) => tacky::Val::Constant(c),
+            Expression::Constant(c) => Constant(c),
             Expression::UnaryOP { op, expr } => {
                 let src = self.convert_expr(*expr, instructions);
                 let dst = Val::Var(self.make_temporary());
@@ -80,10 +80,8 @@ impl ExpressionConverter for TackyParser {
                     TokenType::AmpersandAmpersand => {
                         let result_var = self.make_temporary();
 
-                        let false_label = format!("false_label_{}", self.label_counter);
-                        self.label_counter += 1;
-                        let end_label = format!("end_label_{}", self.label_counter);
-                        self.label_counter += 1;
+                        let false_label = self.label_generator.generate_label("false_label");
+                        let end_label =self.label_generator.generate_label("end_label");
 
                         let v1 = self.convert_expr(*left, instructions);
                         InstructionBuilder::new(instructions)
@@ -106,10 +104,9 @@ impl ExpressionConverter for TackyParser {
                     TokenType::PipePipe => {
                         let result_var = self.make_temporary();
 
-                        let true_label = format!("or_true_{}", self.label_counter);
-                        self.label_counter += 1;
-                        let end_label = format!("or_end_{}", self.label_counter);
-                        self.label_counter += 1;
+                        let true_label = self.label_generator.generate_label("or_true");
+                        let end_label = self.label_generator.generate_label("or_false");
+
 
                         let v2 = self.convert_expr(*left, instructions);
                         InstructionBuilder::new(instructions)
@@ -161,11 +158,8 @@ impl ExpressionConverter for TackyParser {
                 dst
             }
             Expression::Conditional { cond, expr1, expr2 } => {
-                let end_label = format!("end_label_{}", self.label_counter);
-                self.label_counter += 1;
-                let e2 = format!("e2_label_{}", self.label_counter);
-                self.label_counter += 1;
-
+                let end_label = self.label_generator.generate_label("end_label");
+                let e2 = self.label_generator.generate_label("e2_label");
                 let c = self.convert_expr(*cond, instructions);
                 InstructionBuilder::new(instructions).jump_if_zero(c, e2.clone());
 

@@ -36,13 +36,15 @@ struct Args {
     //to parsing stage
     #[arg(long)]
     parse: bool,
-    //to codegen stage
     #[arg(long)]
-    codegen: bool,
+    validate: bool,
+    //to codegen stage
     #[arg(long)]
     tacky: bool,
     #[arg(long)]
-    validate: bool,
+    codegen: bool,
+
+
 }
 
 fn main() {
@@ -144,6 +146,6 @@ fn run() -> Result<(), CompilerError> {
         eprintln!("gcc linking failed for {:?}", asm_path);
         exit(1);
     }
-    //TODO: update readme
+
     Ok(())
 }

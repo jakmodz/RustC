@@ -6,7 +6,6 @@ pub mod ast_parser;
 mod tests {
     use super::*;
     use crate::ast_parser::AsmParser;
-    use log::debug;
     use semantic_analysis::SemanticAnalyzer;
     use std::io::{Write, stdout};
     use tacky::tacky_parser;

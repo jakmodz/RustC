@@ -91,6 +91,11 @@ pub enum TokenType {
     Else,
     QuestionMark,
     Colon,
+    For,
+    While,
+    Do,
+    Break,
+    Continue,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -151,6 +156,11 @@ pub enum Token {
     Else(Span),
     QuestionMark(Span),
     Colon(Span),
+    While(Span),
+    For(Span),
+    Do(Span),
+    Break(Span),
+    Continue(Span),
 }
 
 impl Token {
@@ -204,6 +214,11 @@ impl Token {
             Token::QuestionMark(_) => TokenType::QuestionMark,
             Token::Colon(_) => TokenType::Colon,
             Token::Goto(_) => TokenType::Goto,
+            Token::For(_) => TokenType::For,
+            Token::While(_) => TokenType::While,
+            Token::Do(_) => TokenType::Do,
+            Token::Break(_) => TokenType::Break,
+            Token::Continue(_) => TokenType::Continue,
         }
     }
 
@@ -256,6 +271,11 @@ impl Token {
             | Token::Else(span)
             | Token::QuestionMark(span)
             | Token::Colon(span)
+            | Token::While(span)
+            | Token::For(span)
+            | Token::Do(span)
+            | Token::Break(span)
+            | Token::Continue(span)
             | Token::Goto(span) => span,
         }
     }
@@ -307,6 +327,11 @@ impl Token {
             "goto" => Some(TokenType::Goto),
             "?" => Some(TokenType::QuestionMark),
             ":" => Some(TokenType::Colon),
+            "for" => Some(TokenType::For),
+            "while" => Some(TokenType::While),
+            "do" => Some(TokenType::Do),
+            "break" => Some(TokenType::Break),
+            "continue" => Some(TokenType::Continue),
             _ => None,
         }
     }
@@ -360,6 +385,11 @@ impl Token {
             TokenType::QuestionMark => Token::QuestionMark(span),
             TokenType::Colon => Token::Colon(span),
             TokenType::Goto => Token::Goto(span),
+            TokenType::For => Token::For(span),
+            TokenType::While => Token::While(span),
+            TokenType::Do => Token::Do(span),
+            TokenType::Break => Token::Break(span),
+            TokenType::Continue => Token::Continue(span),
         }
     }
     pub fn is_binary_op(&self) -> bool {
@@ -461,6 +491,11 @@ impl fmt::Display for Token {
             Token::QuestionMark(_) => write!(f, "?"),
             Token::Colon(_) => write!(f, ":"),
             Token::Goto(_) => write!(f, "goto"),
+            Token::For(_) => write!(f, "for"),
+            Token::While(_) => write!(f, "while"),
+            Token::Do(_) => write!(f, "do"),
+            Token::Break(_) => write!(f, "break"),
+            Token::Continue(_) => write!(f, "continue"),
         }
     }
 }

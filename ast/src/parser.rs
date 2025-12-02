@@ -201,6 +201,75 @@ impl Parser {
                     block: Block::new(block_elements),
                 })
             }
+            TokenType::Break=> {
+                self.eat()?;
+                self.excepted_token(TokenType::Semicolon)?;
+                Ok(Stmt::Break(Annotation::None))
+
+            }
+            TokenType::Continue=> {
+                self.eat()?;
+                self.excepted_token(TokenType::Semicolon)?;
+                Ok(Stmt::Continue(Annotation::None))
+
+            }
+            TokenType::While=>{
+                self.eat()?;
+                self.excepted_token(TokenType::OpenParen)?;
+                let condition = self.parse_expression(0)?;
+                self.excepted_token(TokenType::CloseParen)?;
+                let body = self.parse_stmt()?;
+                Ok(Stmt::While{
+                    condition,
+                    body: Box::new(body),
+                    annotation: Annotation::None
+                })
+            }
+            TokenType::Do=>{
+                self.eat()?;
+                let body = self.parse_stmt()?;
+                self.excepted_token(TokenType::While)?;
+                self.excepted_token(TokenType::OpenParen)?;
+                let condition = self.parse_expression(0)?;
+                self.excepted_token(TokenType::CloseParen)?;
+                self.excepted_token(TokenType::Semicolon)?;
+                Ok(Stmt::DoWhile{
+                    body: Box::new(body),
+                    condition,
+                    annotation: Annotation::None
+                })
+            }
+            TokenType::For=>{
+                self.eat()?;
+                self.excepted_token(TokenType::OpenParen)?;
+
+                let init = if self.peek()?.get_token_type() == TokenType::Semicolon {
+                    self.eat()?;
+                    ForInit::Expression(None)
+                } else {
+                    self.parse_for_init()?
+                };
+                let cond = if self.peek()?.get_token_type() == TokenType::Semicolon {
+                    None
+                } else {
+                    Some(self.parse_expression(0)?)
+                };
+                self.excepted_token(TokenType::Semicolon)?;
+                let increment = if self.peek()?.get_token_type() == TokenType::CloseParen {
+                    None
+                } else {
+                    Some(self.parse_expression(0)?)
+                };
+                self.excepted_token(TokenType::CloseParen)?;
+                let body = self.parse_stmt()?;
+                Ok(Stmt::For{
+                    init,
+                    condition: cond,
+                    increment,
+                    body: Box::new(body),
+                    annotation: Annotation::None
+                })
+            }
             _ => {
                 let expr = self.parse_expression(0)?;
                 self.excepted_token(TokenType::Semicolon)?;
@@ -208,7 +277,25 @@ impl Parser {
             }
         }
     }
+    fn parse_for_init(&mut self) -> Result<ForInit, ParserError> {
+        let next_token = self.peek()?;
+        match next_token.get_token_type() {
+            TokenType::Int => {
+                let decl = self.parse_declaration()?;
+                Ok(ForInit::Declaration(decl))
+            }
+            _ => {
+                let expr = if next_token.get_token_type() == TokenType::Semicolon {
+                    None
+                } else {
+                    Some(self.parse_expression(0)?)
+                };
+                self.excepted_token(TokenType::Semicolon)?;
+                Ok(ForInit::Expression(expr))
+            }
+        }
 
+    }
     /*
     Parse Expression
     */

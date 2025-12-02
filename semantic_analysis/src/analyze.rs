@@ -141,7 +141,9 @@ impl SemanticAnalyzer {
                     block: Block::new(resolved_block),
                 })
             }
-            Stmt::While { body, condition, .. } => {
+            Stmt::While {
+                body, condition, ..
+            } => {
                 let resolved_condition = self.resolve_expression(condition)?;
                 let resolved_body = Box::new(self.resolve_statement(body)?);
                 Ok(Stmt::While {
@@ -150,7 +152,9 @@ impl SemanticAnalyzer {
                     annotation: Annotation::None,
                 })
             }
-            Stmt::DoWhile { body, condition, .. } => {
+            Stmt::DoWhile {
+                body, condition, ..
+            } => {
                 let resolved_condition = self.resolve_expression(condition)?;
                 let resolved_body = Box::new(self.resolve_statement(body)?);
                 Ok(Stmt::DoWhile {
@@ -166,7 +170,6 @@ impl SemanticAnalyzer {
                 increment,
                 ..
             } => {
-
                 let saved_variables = self.variables.clone();
 
                 for entry in self.variables.values_mut() {
@@ -348,7 +351,6 @@ impl SemanticAnalyzer {
             _ => Ok(stmt.clone()),
         }
     }
-
 
     fn make_loop_label(&mut self) -> String {
         let label = format!("_loop_{}", self.loop_count);

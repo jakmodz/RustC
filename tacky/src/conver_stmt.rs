@@ -1,28 +1,29 @@
-use ast::ast::{Annotation, Expression, ForInit, Stmt};
+use crate::convert_expr::*;
 use crate::instruction_builder::InstructionBuilder;
 use crate::tacky;
-use crate::tacky::{TackyInstruction};
+use crate::tacky::TackyInstruction;
 use crate::tacky_parser::TackyParser;
-use crate::convert_expr::*;
+use ast::ast::{Annotation, Expression, ForInit, Stmt};
 pub trait StatementConverter {
     fn convert_stmt(&mut self, stmt: Stmt, instructions: &mut Vec<tacky::TackyInstruction>);
-    fn convert_do_while(&mut self,
+    fn convert_do_while(
+        &mut self,
         instructions: &mut Vec<TackyInstruction>,
-        loop_body:Box<Stmt>,
+        loop_body: Box<Stmt>,
         condition: Expression,
-        annotation: Annotation
+        annotation: Annotation,
     );
     fn convert_while(
         &mut self,
         instructions: &mut Vec<TackyInstruction>,
         body: Box<Stmt>,
         condition: Expression,
-        annotation: Annotation
+        annotation: Annotation,
     );
     fn convert_for(
         &mut self,
-        instructions: &mut Vec<TackyInstruction> ,
-        init : ForInit,
+        instructions: &mut Vec<TackyInstruction>,
+        init: ForInit,
         condition: Option<Expression>,
         increment: Option<Expression>,
         body: Box<Stmt>,
@@ -63,34 +64,35 @@ impl StatementConverter for TackyParser {
             Stmt::Compound { block } => {
                 self.convert_block(block, instructions);
             }
-            Stmt::Continue(annotation) => {
-                match annotation {
-                    Annotation::LoopLabel(label) => {
-                        let continue_label = format!("{}_continue", label);
-                        InstructionBuilder::new(instructions).jump(continue_label);
-                    }
-                    _ => {}
+            Stmt::Continue(annotation) => match annotation {
+                Annotation::LoopLabel(label) => {
+                    let continue_label = format!("{}_continue", label);
+                    InstructionBuilder::new(instructions).jump(continue_label);
                 }
-            }
-            Stmt::Break(annotation) => {
-                match annotation {
-                    Annotation::LoopLabel(label) => {
-                        let end_label = format!("{}_end", label);
-                        InstructionBuilder::new(instructions).jump(end_label);
-                    }
-                    _ => {}
+                _ => {}
+            },
+            Stmt::Break(annotation) => match annotation {
+                Annotation::LoopLabel(label) => {
+                    let end_label = format!("{}_end", label);
+                    InstructionBuilder::new(instructions).jump(end_label);
                 }
-            }
+                _ => {}
+            },
             Stmt::DoWhile {
                 condition,
                 body: loop_body,
                 annotation,
                 ..
             } => {
-                self.convert_do_while(instructions,loop_body,condition,annotation);
+                self.convert_do_while(instructions, loop_body, condition, annotation);
             }
-            Stmt::While { body, condition, annotation, .. } => {
-                self.convert_while(instructions,body,condition,annotation);
+            Stmt::While {
+                body,
+                condition,
+                annotation,
+                ..
+            } => {
+                self.convert_while(instructions, body, condition, annotation);
             }
             Stmt::For {
                 init,
@@ -99,24 +101,18 @@ impl StatementConverter for TackyParser {
                 body,
                 annotation,
             } => {
-                self.convert_for(
-                    instructions,
-                    init,
-                    condition,
-                    increment,
-                    body,
-                    annotation
-                );
+                self.convert_for(instructions, init, condition, increment, body, annotation);
             }
         }
-
     }
 
-    fn convert_do_while(&mut self,
-            instructions: &mut Vec<TackyInstruction>,
-            loop_body:Box<Stmt>,
-            condition: Expression,
-            annotation: Annotation) {
+    fn convert_do_while(
+        &mut self,
+        instructions: &mut Vec<TackyInstruction>,
+        loop_body: Box<Stmt>,
+        condition: Expression,
+        annotation: Annotation,
+    ) {
         let loop_label = match annotation {
             Annotation::LoopLabel(label) => label,
             _ => self.label_generator.generate_label("do"),
@@ -135,9 +131,13 @@ impl StatementConverter for TackyParser {
             .label(end_label);
     }
 
-
-
-    fn convert_while(&mut self, instructions: &mut Vec<TackyInstruction>, body: Box<Stmt>, condition: Expression, annotation: Annotation) {
+    fn convert_while(
+        &mut self,
+        instructions: &mut Vec<TackyInstruction>,
+        body: Box<Stmt>,
+        condition: Expression,
+        annotation: Annotation,
+    ) {
         let loop_label = match annotation {
             Annotation::LoopLabel(label) => label,
             _ => self.label_generator.generate_label("while"),
@@ -155,7 +155,15 @@ impl StatementConverter for TackyParser {
             .label(end_label);
     }
 
-    fn convert_for(&mut self, instructions: &mut Vec<TackyInstruction>, init: ForInit, condition: Option<Expression>, increment: Option<Expression>, body: Box<Stmt>, annotation: Annotation) {
+    fn convert_for(
+        &mut self,
+        instructions: &mut Vec<TackyInstruction>,
+        init: ForInit,
+        condition: Option<Expression>,
+        increment: Option<Expression>,
+        body: Box<Stmt>,
+        annotation: Annotation,
+    ) {
         let loop_label = match annotation {
             Annotation::LoopLabel(label) => label,
             _ => self.label_generator.generate_label("for"),
@@ -187,7 +195,13 @@ impl StatementConverter for TackyParser {
         InstructionBuilder::new(instructions).label(end_label);
     }
 
-    fn convert_if(&mut self, instructions: &mut Vec<TackyInstruction>, condition: Expression, then_branch: Box<Stmt>, else_branch: Option<Box<Stmt>>) {
+    fn convert_if(
+        &mut self,
+        instructions: &mut Vec<TackyInstruction>,
+        condition: Expression,
+        then_branch: Box<Stmt>,
+        else_branch: Option<Box<Stmt>>,
+    ) {
         let c = self.convert_expr(condition, instructions);
         if let Some(else_branch) = else_branch {
             let else_label = self.label_generator.generate_label("else_label");
@@ -208,8 +222,3 @@ impl StatementConverter for TackyParser {
         }
     }
 }
-
-
-
-
-

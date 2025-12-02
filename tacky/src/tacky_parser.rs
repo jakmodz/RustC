@@ -1,12 +1,12 @@
+use crate::label_generator::LabelGenerator;
 use crate::tacky;
 use crate::tacky::Val::Constant;
 use crate::tacky::{BinaryOp, TackyFunction, TackyInstruction, Val};
-use crate::label_generator::LabelGenerator;
 
-use ast::ast::{Annotation, BlockElement, Declaration, Expression, ForInit, Program};
 use crate::conver_stmt::StatementConverter;
 use crate::convert_expr::ExpressionConverter;
 use crate::instruction_builder::InstructionBuilder;
+use ast::ast::{Annotation, BlockElement, Declaration, Expression, ForInit, Program};
 
 pub struct TackyParser {
     pub var_counter: usize,
@@ -56,7 +56,11 @@ impl TackyParser {
         }
     }
 
-    pub(crate) fn convert_block(&mut self, block: ast::ast::Block, body: &mut Vec<tacky::TackyInstruction>) {
+    pub(crate) fn convert_block(
+        &mut self,
+        block: ast::ast::Block,
+        body: &mut Vec<tacky::TackyInstruction>,
+    ) {
         for element in block.elements {
             self.convert_block_element(element, body);
         }
@@ -76,15 +80,18 @@ impl TackyParser {
         }
     }
 
-
-    pub(crate) fn convert_for_init(&mut self,init: ForInit,instructions: &mut Vec<TackyInstruction>){
+    pub(crate) fn convert_for_init(
+        &mut self,
+        init: ForInit,
+        instructions: &mut Vec<TackyInstruction>,
+    ) {
         match init {
-            ForInit::Declaration(decl)=>{
-                self.convert_declaration(decl,instructions);
+            ForInit::Declaration(decl) => {
+                self.convert_declaration(decl, instructions);
             }
-            ForInit::Expression(expr)=>{
-                if let Some(expr) = expr{
-                    self.convert_expr(expr,instructions);
+            ForInit::Expression(expr) => {
+                if let Some(expr) = expr {
+                    self.convert_expr(expr, instructions);
                 }
             }
         }
@@ -103,8 +110,12 @@ impl TackyParser {
         let var = Val::Var(var_name);
 
         if pre {
-            InstructionBuilder::new(instructions)
-                .binary(binary_op, var.clone(), Constant(1), var.clone());
+            InstructionBuilder::new(instructions).binary(
+                binary_op,
+                var.clone(),
+                Constant(1),
+                var.clone(),
+            );
             var
         } else {
             let tmp = Val::Var(self.make_temporary());

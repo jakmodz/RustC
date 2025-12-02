@@ -43,8 +43,6 @@ struct Args {
     tacky: bool,
     #[arg(long)]
     codegen: bool,
-
-
 }
 
 fn main() {

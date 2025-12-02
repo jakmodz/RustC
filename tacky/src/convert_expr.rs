@@ -1,10 +1,10 @@
-use ast::ast::Expression;
-use lex::token::TokenType;
 use crate::instruction_builder::InstructionBuilder;
 use crate::tacky;
-use crate::tacky::{BinaryOp, TackyInstruction, Val};
 use crate::tacky::Val::Constant;
+use crate::tacky::{BinaryOp, TackyInstruction, Val};
 use crate::tacky_parser::TackyParser;
+use ast::ast::Expression;
+use lex::token::TokenType;
 
 pub trait ExpressionConverter {
     fn convert_expr(&mut self, expr: Expression, instructions: &mut Vec<TackyInstruction>) -> Val;
@@ -20,8 +20,7 @@ impl ExpressionConverter for TackyParser {
                 let result = self.convert_expr(*initializer, instructions);
                 match expr_to.as_ref() {
                     Expression::Var(name) => {
-                        InstructionBuilder::new(instructions)
-                            .copy(result, Val::Var(name.clone()));
+                        InstructionBuilder::new(instructions).copy(result, Val::Var(name.clone()));
                         Val::Var(name.clone())
                     }
                     _ => unreachable!(),
@@ -48,8 +47,12 @@ impl ExpressionConverter for TackyParser {
                 };
 
                 let lhs = Val::Var(name);
-                InstructionBuilder::new(instructions)
-                    .binary(binary_op, lhs.clone(), rhs, lhs.clone());
+                InstructionBuilder::new(instructions).binary(
+                    binary_op,
+                    lhs.clone(),
+                    rhs,
+                    lhs.clone(),
+                );
 
                 lhs
             }
@@ -81,15 +84,13 @@ impl ExpressionConverter for TackyParser {
                         let result_var = self.make_temporary();
 
                         let false_label = self.label_generator.generate_label("false_label");
-                        let end_label =self.label_generator.generate_label("end_label");
+                        let end_label = self.label_generator.generate_label("end_label");
 
                         let v1 = self.convert_expr(*left, instructions);
-                        InstructionBuilder::new(instructions)
-                            .jump_if_zero(v1, false_label.clone());
+                        InstructionBuilder::new(instructions).jump_if_zero(v1, false_label.clone());
 
                         let v2 = self.convert_expr(*right, instructions);
-                        InstructionBuilder::new(instructions)
-                            .jump_if_zero(v2, false_label.clone());
+                        InstructionBuilder::new(instructions).jump_if_zero(v2, false_label.clone());
 
                         InstructionBuilder::new(instructions)
                             .copy(Constant(1), Val::Var(result_var.clone()))
@@ -106,7 +107,6 @@ impl ExpressionConverter for TackyParser {
 
                         let true_label = self.label_generator.generate_label("or_true");
                         let end_label = self.label_generator.generate_label("or_false");
-
 
                         let v2 = self.convert_expr(*left, instructions);
                         InstructionBuilder::new(instructions)
@@ -153,8 +153,7 @@ impl ExpressionConverter for TackyParser {
                     _ => panic!("Unsupported binary operator"),
                 };
 
-                InstructionBuilder::new(instructions)
-                    .binary(binary_op, v1, v2, dst.clone());
+                InstructionBuilder::new(instructions).binary(binary_op, v1, v2, dst.clone());
                 dst
             }
             Expression::Conditional { cond, expr1, expr2 } => {

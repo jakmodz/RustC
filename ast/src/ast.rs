@@ -1,7 +1,7 @@
 use lex::token::Token;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Annotation{
+pub enum Annotation {
     None,
     LoopLabel(String),
 }
@@ -54,19 +54,19 @@ pub enum Stmt {
     While {
         condition: Expression,
         body: Box<Stmt>,
-        annotation: Annotation
+        annotation: Annotation,
     },
-    DoWhile{
+    DoWhile {
         body: Box<Stmt>,
         condition: Expression,
-        annotation: Annotation
+        annotation: Annotation,
     },
     For {
         init: ForInit,
         condition: Option<Expression>,
         increment: Option<Expression>,
         body: Box<Stmt>,
-        annotation: Annotation
+        annotation: Annotation,
     },
     Compound {
         block: Block,

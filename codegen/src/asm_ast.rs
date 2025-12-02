@@ -145,4 +145,3 @@ pub(crate) fn convert_cond_code(code: &ConditionCode) -> String {
     }
     .to_string()
 }
-

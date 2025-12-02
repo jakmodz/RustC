@@ -1,4 +1,4 @@
-use crate::tacky::{TackyInstruction, Val, BinaryOp, UnaryOp};
+use crate::tacky::{BinaryOp, TackyInstruction, UnaryOp, Val};
 
 pub struct InstructionBuilder<'a> {
     instructions: &'a mut Vec<TackyInstruction>,
@@ -15,12 +15,18 @@ impl<'a> InstructionBuilder<'a> {
     }
 
     pub fn unary(&mut self, unary_op: UnaryOp, src: Val, dst: Val) -> &mut Self {
-        self.instructions.push(TackyInstruction::Unary { unary_op, src, dst });
+        self.instructions
+            .push(TackyInstruction::Unary { unary_op, src, dst });
         self
     }
 
     pub fn binary(&mut self, binary_op: BinaryOp, src1: Val, src2: Val, dst: Val) -> &mut Self {
-        self.instructions.push(TackyInstruction::Binary { binary_op, src1, src2, dst });
+        self.instructions.push(TackyInstruction::Binary {
+            binary_op,
+            src1,
+            src2,
+            dst,
+        });
         self
     }
 
@@ -30,12 +36,14 @@ impl<'a> InstructionBuilder<'a> {
     }
 
     pub fn jump_if_zero(&mut self, cond: Val, target: String) -> &mut Self {
-        self.instructions.push(TackyInstruction::JumpIfZero { cond, target });
+        self.instructions
+            .push(TackyInstruction::JumpIfZero { cond, target });
         self
     }
 
     pub fn jump_if_not_zero(&mut self, cond: Val, target: String) -> &mut Self {
-        self.instructions.push(TackyInstruction::JumpIfNotZero { cond, target });
+        self.instructions
+            .push(TackyInstruction::JumpIfNotZero { cond, target });
         self
     }
 

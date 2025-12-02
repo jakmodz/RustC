@@ -30,9 +30,8 @@ impl AsmGenerator {
     pub fn write(&mut self, program: AsmProgram, mut outputs: Vec<Box<dyn Write>>) -> Result<()> {
         for out in outputs.iter_mut() {
             self.write_function(out, &program.function)?;
-            if cfg!(target_os= "macos") {
-
-            }else{
+            if cfg!(target_os = "macos") {
+            } else {
                 writeln!(out, ".section .note.GNU-stack,\"\",@progbits")?;
             }
         }
@@ -41,8 +40,8 @@ impl AsmGenerator {
 
     fn write_function(&mut self, out: &mut dyn Write, function: &AsmFunction) -> Result<()> {
         let mut fn_name = function.name.clone();
-        if cfg!(target_os= "macos") {
-            fn_name = format!("_{}",fn_name);
+        if cfg!(target_os = "macos") {
+            fn_name = format!("_{}", fn_name);
         }
 
         writeln!(out, "\t.globl {}\n{}:", fn_name, fn_name)?;
@@ -77,15 +76,24 @@ impl AsmGenerator {
             }
             Instruction::Cdq => writeln!(out, "\tcdq")?,
             Instruction::Cmp { operand1, operand2 } => self.write_cmp(out, operand1, operand2)?,
-            Instruction::Jmp { identifier } => writeln!(out, "\tjmp\t{}", self.format_label(identifier))?,
+            Instruction::Jmp { identifier } => {
+                writeln!(out, "\tjmp\t{}", self.format_label(identifier))?
+            }
             Instruction::JmpCc {
                 identifier,
                 cond_code,
-            } => writeln!(out, "\tj{}\t{}", convert_cond_code(cond_code), self.format_label(identifier))?,
+            } => writeln!(
+                out,
+                "\tj{}\t{}",
+                convert_cond_code(cond_code),
+                self.format_label(identifier)
+            )?,
             Instruction::SetCc { cond_code, operand } => {
                 self.write_setcc(out, cond_code, operand.clone())?
             }
-            Instruction::Label { identifier } => writeln!(out, "{}:", self.format_label(identifier))?,
+            Instruction::Label { identifier } => {
+                writeln!(out, "{}:", self.format_label(identifier))?
+            }
         }
         Ok(())
     }

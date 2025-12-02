@@ -201,31 +201,29 @@ impl Parser {
                     block: Block::new(block_elements),
                 })
             }
-            TokenType::Break=> {
+            TokenType::Break => {
                 self.eat()?;
                 self.excepted_token(TokenType::Semicolon)?;
                 Ok(Stmt::Break(Annotation::None))
-
             }
-            TokenType::Continue=> {
+            TokenType::Continue => {
                 self.eat()?;
                 self.excepted_token(TokenType::Semicolon)?;
                 Ok(Stmt::Continue(Annotation::None))
-
             }
-            TokenType::While=>{
+            TokenType::While => {
                 self.eat()?;
                 self.excepted_token(TokenType::OpenParen)?;
                 let condition = self.parse_expression(0)?;
                 self.excepted_token(TokenType::CloseParen)?;
                 let body = self.parse_stmt()?;
-                Ok(Stmt::While{
+                Ok(Stmt::While {
                     condition,
                     body: Box::new(body),
-                    annotation: Annotation::None
+                    annotation: Annotation::None,
                 })
             }
-            TokenType::Do=>{
+            TokenType::Do => {
                 self.eat()?;
                 let body = self.parse_stmt()?;
                 self.excepted_token(TokenType::While)?;
@@ -233,13 +231,13 @@ impl Parser {
                 let condition = self.parse_expression(0)?;
                 self.excepted_token(TokenType::CloseParen)?;
                 self.excepted_token(TokenType::Semicolon)?;
-                Ok(Stmt::DoWhile{
+                Ok(Stmt::DoWhile {
                     body: Box::new(body),
                     condition,
-                    annotation: Annotation::None
+                    annotation: Annotation::None,
                 })
             }
-            TokenType::For=>{
+            TokenType::For => {
                 self.eat()?;
                 self.excepted_token(TokenType::OpenParen)?;
 
@@ -262,12 +260,12 @@ impl Parser {
                 };
                 self.excepted_token(TokenType::CloseParen)?;
                 let body = self.parse_stmt()?;
-                Ok(Stmt::For{
+                Ok(Stmt::For {
                     init,
                     condition: cond,
                     increment,
                     body: Box::new(body),
-                    annotation: Annotation::None
+                    annotation: Annotation::None,
                 })
             }
             _ => {
@@ -294,7 +292,6 @@ impl Parser {
                 Ok(ForInit::Expression(expr))
             }
         }
-
     }
     /*
     Parse Expression

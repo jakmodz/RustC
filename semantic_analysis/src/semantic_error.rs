@@ -23,5 +23,5 @@ pub enum SemanticError {
     Syntax Errors
     */
     #[error("{stmt} statement not within a loop")]
-    JumpStmtNotInLoop{stmt: String},
+    JumpStmtNotInLoop { stmt: String },
 }

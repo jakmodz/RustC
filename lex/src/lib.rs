@@ -1,8 +1,8 @@
 pub mod error;
 pub mod lexer;
+mod patters;
 mod span;
 pub mod token;
-mod patters;
 mod token_to_string;
 
 use crate::span::Span;

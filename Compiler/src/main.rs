@@ -111,7 +111,6 @@ fn run() -> Result<(), CompilerError> {
     if args.tacky {
         return Ok(());
     }
-
     /*
      Assemble Stage
     */

@@ -3,8 +3,7 @@ use crate::tacky::Val::Constant;
 use crate::tacky::{BinaryOp, TackyFunction, TackyInstruction, Val};
 use crate::label_generator::LabelGenerator;
 
-use ast::ast::{Annotation, BlockElement, Declaration, Expression, Program, Stmt};
-use lex::token::TokenType;
+use ast::ast::{Annotation, BlockElement, Declaration, Expression, ForInit, Program};
 use crate::conver_stmt::StatementConverter;
 use crate::convert_expr::ExpressionConverter;
 use crate::instruction_builder::InstructionBuilder;
@@ -78,7 +77,18 @@ impl TackyParser {
     }
 
 
-
+    pub(crate) fn convert_for_init(&mut self,init: ForInit,instructions: &mut Vec<TackyInstruction>){
+        match init {
+            ForInit::Declaration(decl)=>{
+                self.convert_declaration(decl,instructions);
+            }
+            ForInit::Expression(expr)=>{
+                if let Some(expr) = expr{
+                    self.convert_expr(expr,instructions);
+                }
+            }
+        }
+    }
 
     pub(crate) fn convert_inc_dec(
         &mut self,

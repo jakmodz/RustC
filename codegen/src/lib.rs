@@ -13,17 +13,24 @@ mod tests {
     #[test]
     fn test_asm_gen() -> std::io::Result<()> {
         let source = String::from(
-            "
-           int main(void) {
-    int a = 2;
-    int b;
-    {
-        a = -4;
-        int a = 7;
-        b = a + 1;
+            "int main(void) {
+    int x = 5;
+    int acc = 0;
+    while (x >= 0) {
+        int i = x;
+        while (i <= 10) {
+            i = i + 1;
+            if (i % 2)
+                continue;
+            acc = acc + 1;
+        }
+        x = x - 1;
     }
-    return b == 8 && a == -4;
-}",
+    return acc;
+}
+
+
+",
         );
         let mut lexer = lex::lexer::Lexer::new();
         let tokens = lexer.tokenize(source).unwrap();

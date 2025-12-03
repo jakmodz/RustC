@@ -4,6 +4,7 @@ use lex::token::Token;
 pub enum Annotation {
     None,
     LoopLabel(String),
+    SwitchLabel(String),
 }
 
 #[derive(Debug, Clone)]
@@ -34,6 +35,11 @@ impl Block {
 pub enum ForInit {
     Declaration(Declaration),
     Expression(Option<Expression>),
+}
+#[derive(Debug, Clone, PartialEq)]
+pub struct SwitchCase {
+    pub value: i64,
+    pub label: String,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {
@@ -70,6 +76,20 @@ pub enum Stmt {
     },
     Compound {
         block: Block,
+    },
+    Switch {
+        expr: Expression,
+        body: Box<Stmt>,
+        annotation: Annotation,
+        cases: Vec<SwitchCase>,
+        default_label: Option<String>,
+    },
+    Case{
+        value:Expression,
+        body:Box<Stmt>,
+    },
+    Default{
+        body:Box<Stmt>,
     },
     Goto(String),
     Label(String),

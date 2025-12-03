@@ -1,8 +1,7 @@
 use crate::Span;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
-use std::fmt;
-use std::fmt::Formatter;
+
 lazy_static! {
     static ref OPERATOR_PRECEDENCE: HashMap<TokenType, usize> = {
         let mut map = HashMap::new();
@@ -96,6 +95,9 @@ pub enum TokenType {
     Do,
     Break,
     Continue,
+    Switch,
+    Case,
+    Default,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -161,6 +163,9 @@ pub enum Token {
     Do(Span),
     Break(Span),
     Continue(Span),
+    Switch(Span),
+    Case(Span),
+    Default(Span),
 }
 
 impl Token {
@@ -219,6 +224,9 @@ impl Token {
             Token::Do(_) => TokenType::Do,
             Token::Break(_) => TokenType::Break,
             Token::Continue(_) => TokenType::Continue,
+            Token::Switch(_) => TokenType::Switch,
+            Token::Case(_) => TokenType::Case,
+            Token::Default(_) => TokenType::Default,
         }
     }
 
@@ -276,6 +284,9 @@ impl Token {
             | Token::Do(span)
             | Token::Break(span)
             | Token::Continue(span)
+            | Token::Switch(span)
+            | Token::Case(span)
+            | Token::Default(span)
             | Token::Goto(span) => span,
         }
     }
@@ -332,6 +343,9 @@ impl Token {
             "do" => Some(TokenType::Do),
             "break" => Some(TokenType::Break),
             "continue" => Some(TokenType::Continue),
+            "switch" => Some(TokenType::Switch),
+            "case" => Some(TokenType::Case),
+            "default" => Some(TokenType::Default),
             _ => None,
         }
     }
@@ -390,6 +404,9 @@ impl Token {
             TokenType::Do => Token::Do(span),
             TokenType::Break => Token::Break(span),
             TokenType::Continue => Token::Continue(span),
+            TokenType::Switch => Token::Switch(span),
+            TokenType::Case => Token::Case(span),
+            TokenType::Default => Token::Default(span),
         }
     }
     pub fn is_binary_op(&self) -> bool {

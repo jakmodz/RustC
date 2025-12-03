@@ -1,4 +1,4 @@
-use crate::token::{Token, TokenType};
+use crate::token::{ TokenType};
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -6,12 +6,15 @@ lazy_static! {
     pub static ref PATTERNS: Vec<(Regex, TokenType)> = {
         vec![
             (Regex::new(r"^continue\b").unwrap(), TokenType::Continue),
+            (Regex::new(r"^switch\b").unwrap(), TokenType::Switch),
             (Regex::new(r"^break\b").unwrap(), TokenType::Break),
+            (Regex::new(r"^default\b").unwrap(), TokenType::Default),
             (Regex::new(r"^return\b").unwrap(), TokenType::Return),
             (Regex::new(r"^while\b").unwrap(), TokenType::While),
             (Regex::new(r"^void\b").unwrap(), TokenType::Void),
             (Regex::new(r"^goto\b").unwrap(), TokenType::Goto),
             (Regex::new(r"^else\b").unwrap(), TokenType::Else),
+            (Regex::new(r"^case\b").unwrap(),TokenType::Case),
             (Regex::new(r"^int\b").unwrap(), TokenType::Int),
 
             (Regex::new(r"^for\b").unwrap(), TokenType::For),

@@ -24,4 +24,14 @@ pub enum SemanticError {
     */
     #[error("{stmt} statement not within a loop")]
     JumpStmtNotInLoop { stmt: String },
+    #[error("Case value  is not a constant expression")]
+    NonConstantCase,
+    #[error("Case statement outside of switch")]
+    CaseOutsideSwitch,
+    #[error("Default statement outside of switch")]
+    DefaultOutsideSwitch,
+    #[error("Duplicate case value '{0}' in switch statement")]
+    DuplicateCase(i64),
+    #[error("Multiple default labels in switch statement")]
+    MultipleDefaults,
 }

@@ -172,6 +172,38 @@ impl Parser {
                     else_branch: else_branch.map(Box::new),
                 })
             }
+            TokenType::Switch=>{
+                self.eat()?;
+                self.excepted_token(TokenType::OpenParen)?;
+                let expr = self.parse_expression(0)?;
+                self.excepted_token(TokenType::CloseParen)?;
+                let body = self.parse_stmt()?;
+                Ok(Stmt::Switch {
+                    expr,
+                    body: Box::new(body),
+                    annotation: Annotation::None,
+                    cases: Vec::new(),
+                    default_label: None
+                })
+            }
+            TokenType::Case=>{
+                self.eat()?;
+                let value = self.parse_expression(0)?;
+                self.excepted_token(TokenType::Colon)?;
+                let body = self.parse_stmt()?;
+                Ok(Stmt::Case{
+                    value,
+                    body:Box::new(body)
+                })
+            }
+            TokenType::Default=>{
+                self.eat()?;
+                self.excepted_token(TokenType::Colon)?;
+                let body = self.parse_stmt()?;
+                Ok(Stmt::Default{
+                    body:Box::new(body)
+                })
+            }
             TokenType::Goto => {
                 self.eat()?;
                 let name = self.eat()?.to_string();

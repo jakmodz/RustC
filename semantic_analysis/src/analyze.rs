@@ -7,12 +7,14 @@ use ast::ast::*;
 use std::collections::{HashMap, HashSet};
 use std::iter::Peekable;
 use std::slice::Iter;
+use crate::switch_analyze::SwitchAnalyzer;
 
 pub struct SemanticAnalyzer {
     variables: HashMap<String, VariableEntry>,
     labels: HashSet<String>,
     pub var_count: usize,
     pub loop_count: usize,
+    pub switch_count: usize,
 }
 
 impl SemanticAnalyzer {
@@ -22,6 +24,7 @@ impl SemanticAnalyzer {
             labels: HashSet::new(),
             var_count: 0,
             loop_count: 0,
+            switch_count: 0,
         }
     }
 
@@ -51,6 +54,7 @@ impl SemanticAnalyzer {
         self.variable_resolution(ast)?;
         self.analyze_goto_statements(ast)?;
         self.analyze_loop_labels(ast)?;
+        self.analyze_switch_statements(ast)?;
         Ok(())
     }
 
@@ -375,14 +379,19 @@ impl SemanticAnalyzer {
         match stmt {
             Stmt::Break(label) => {
                 if let Some(loop_label) = current_label {
-                    *label = Annotation::LoopLabel(loop_label);
+                    if !matches!(label, Annotation::SwitchLabel(_)) {
+                        *label = Annotation::LoopLabel(loop_label);
+                    }
                     Ok(())
-                } else {
+                } else if matches!(label, Annotation::None) {
                     Err(SemanticError::JumpStmtNotInLoop {
                         stmt: "Break".to_string(),
                     })
+                } else {
+                    Ok(())
                 }
             }
+
             Stmt::Continue(label) => {
                 if let Some(loop_label) = current_label {
                     *label = Annotation::LoopLabel(loop_label);

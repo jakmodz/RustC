@@ -53,8 +53,7 @@ impl SemanticAnalyzer {
     pub fn analyze(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
         self.variable_resolution(ast)?;
         self.analyze_goto_statements(ast)?;
-        self.analyze_loop_labels(ast)?;
-        self.analyze_switch_statements(ast)?;
+        self.analyze_control_flow(ast)?;
         Ok(())
     }
 
@@ -193,6 +192,33 @@ impl SemanticAnalyzer {
                     increment: resolved_increment,
                     body: resolved_body,
                     annotation: Annotation::None,
+                })
+            }
+            Stmt::Switch { expr, body, annotation, cases, default_label } => {
+                let resolved_expr = self.resolve_expression(expr)?;
+                let resolved_body = Box::new(self.resolve_statement(body)?);
+                Ok(Stmt::Switch {
+                    expr: resolved_expr,
+                    body: resolved_body,
+                    annotation: annotation.clone(),
+                    cases: cases.clone(),
+                    default_label: default_label.clone(),
+                })
+            }
+
+            Stmt::Case { value, body } => {
+                let resolved_value = self.resolve_expression(value)?;
+                let resolved_body = Box::new(self.resolve_statement(body)?);
+                Ok(Stmt::Case {
+                    value: resolved_value,
+                    body: resolved_body,
+                })
+            }
+
+            Stmt::Default { body } => {
+                let resolved_body = Box::new(self.resolve_statement(body)?);
+                Ok(Stmt::Default {
+                    body: resolved_body,
                 })
             }
             _ => Ok(stmt.clone()),
@@ -379,9 +405,11 @@ impl SemanticAnalyzer {
         match stmt {
             Stmt::Break(label) => {
                 if let Some(loop_label) = current_label {
-                    if !matches!(label, Annotation::SwitchLabel(_)) {
-                        *label = Annotation::LoopLabel(loop_label);
-                    }
+                    // We're inside a loop - break should exit the loop
+                    *label = Annotation::LoopLabel(loop_label);
+                    Ok(())
+                } else if matches!(label, Annotation::SwitchLabel(_)) {
+                    // Already has a switch label and no loop context - keep it
                     Ok(())
                 } else if matches!(label, Annotation::None) {
                     Err(SemanticError::JumpStmtNotInLoop {
@@ -442,6 +470,23 @@ impl SemanticAnalyzer {
                 }
                 Ok(())
             }
+
+            // NEW: descend into switch to label nested loops and jump statements
+            Stmt::Switch { body, .. } => {
+                self.label_loops(body, current_label.clone())?;
+                Ok(())
+            }
+
+            // NEW: descend into case/default bodies
+            Stmt::Case { body, .. } => {
+                self.label_loops(body, current_label.clone())?;
+                Ok(())
+            }
+            Stmt::Default { body } => {
+                self.label_loops(body, current_label.clone())?;
+                Ok(())
+            }
+
             _ => Ok(()),
         }
     }

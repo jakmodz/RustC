@@ -1,6 +1,6 @@
+use crate::token::Token;
 use std::fmt;
 use std::fmt::Formatter;
-use crate::token::Token;
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {

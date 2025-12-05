@@ -58,9 +58,9 @@ impl fmt::Display for Token {
             Token::Do(_) => write!(f, "do"),
             Token::Break(_) => write!(f, "break"),
             Token::Continue(_) => write!(f, "continue"),
-            Token::Switch(_)=> write!(f, "switch"),
-            Token::Case(_)=> write!(f, "case"),
-            Token::Default(_)=> write!(f, "default"),
+            Token::Switch(_) => write!(f, "switch"),
+            Token::Case(_) => write!(f, "case"),
+            Token::Default(_) => write!(f, "default"),
         }
     }
 }

@@ -1,4 +1,4 @@
-use crate::token::{ TokenType};
+use crate::token::TokenType;
 use lazy_static::lazy_static;
 use regex::Regex;
 

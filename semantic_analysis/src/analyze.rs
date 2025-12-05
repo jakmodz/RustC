@@ -1,5 +1,6 @@
 use crate::SemanticError;
 use crate::map_entry::VariableEntry;
+use crate::switch_analyze::SwitchAnalyzer;
 use ast::ast::BlockElement;
 use ast::ast::Declaration;
 use ast::ast::Program;
@@ -7,7 +8,6 @@ use ast::ast::*;
 use std::collections::{HashMap, HashSet};
 use std::iter::Peekable;
 use std::slice::Iter;
-use crate::switch_analyze::SwitchAnalyzer;
 
 pub struct SemanticAnalyzer {
     variables: HashMap<String, VariableEntry>,
@@ -194,7 +194,13 @@ impl SemanticAnalyzer {
                     annotation: Annotation::None,
                 })
             }
-            Stmt::Switch { expr, body, annotation, cases, default_label } => {
+            Stmt::Switch {
+                expr,
+                body,
+                annotation,
+                cases,
+                default_label,
+            } => {
                 let resolved_expr = self.resolve_expression(expr)?;
                 let resolved_body = Box::new(self.resolve_statement(body)?);
                 Ok(Stmt::Switch {

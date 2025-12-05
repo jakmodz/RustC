@@ -2,10 +2,10 @@
 use crate::convert_expr::*;
 use crate::instruction_builder::InstructionBuilder;
 use crate::tacky;
+use crate::tacky::Val::Constant;
 use crate::tacky::{BinaryOp, TackyInstruction, Val};
 use crate::tacky_parser::TackyParser;
 use ast::ast::{Annotation, BlockElement, Expression, ForInit, Stmt, SwitchCase};
-use crate::tacky::Val::Constant;
 
 pub trait StatementConverter {
     fn convert_stmt(&mut self, stmt: Stmt, instructions: &mut Vec<tacky::TackyInstruction>);
@@ -78,7 +78,8 @@ impl StatementConverter for TackyParser {
                     let else_label = self.label_generator.generate_label("else_label");
                     let end_label = self.label_generator.generate_label("end_label");
 
-                    InstructionBuilder::new(instructions).jump_if_zero(condition_val, else_label.clone());
+                    InstructionBuilder::new(instructions)
+                        .jump_if_zero(condition_val, else_label.clone());
                     self.convert_stmt(*then_branch, instructions);
                     InstructionBuilder::new(instructions).jump(end_label.clone());
                     InstructionBuilder::new(instructions).label(else_label);
@@ -86,7 +87,8 @@ impl StatementConverter for TackyParser {
                     InstructionBuilder::new(instructions).label(end_label);
                 } else {
                     let end_label = self.label_generator.generate_label("end_label");
-                    InstructionBuilder::new(instructions).jump_if_zero(condition_val, end_label.clone());
+                    InstructionBuilder::new(instructions)
+                        .jump_if_zero(condition_val, end_label.clone());
                     self.convert_stmt(*then_branch, instructions);
                     InstructionBuilder::new(instructions).label(end_label);
                 }
@@ -100,17 +102,15 @@ impl StatementConverter for TackyParser {
             Stmt::Compound { block } => {
                 self.convert_block(block, instructions);
             }
-            Stmt::Break(annotation) => {
-                match annotation {
-                    Annotation::LoopLabel(label) => {
-                        InstructionBuilder::new(instructions).jump(format!("{}_end", label));
-                    }
-                    Annotation::SwitchLabel(label) => {
-                        InstructionBuilder::new(instructions).jump(format!("{}_end", label));
-                    }
-                    _ => {}
+            Stmt::Break(annotation) => match annotation {
+                Annotation::LoopLabel(label) => {
+                    InstructionBuilder::new(instructions).jump(format!("{}_end", label));
                 }
-            }
+                Annotation::SwitchLabel(label) => {
+                    InstructionBuilder::new(instructions).jump(format!("{}_end", label));
+                }
+                _ => {}
+            },
             Stmt::Continue(annotation) => {
                 if let Annotation::LoopLabel(label) = annotation {
                     InstructionBuilder::new(instructions).jump(format!("{}_continue", label));
@@ -131,7 +131,8 @@ impl StatementConverter for TackyParser {
 
                 InstructionBuilder::new(instructions).label(continue_label.clone());
                 let condition_val = self.convert_expr(condition, instructions);
-                InstructionBuilder::new(instructions).jump_if_zero(condition_val, end_label.clone());
+                InstructionBuilder::new(instructions)
+                    .jump_if_zero(condition_val, end_label.clone());
 
                 self.convert_stmt(*body, instructions);
                 InstructionBuilder::new(instructions)
@@ -181,7 +182,8 @@ impl StatementConverter for TackyParser {
 
                 if let Some(cond) = condition {
                     let condition_val = self.convert_expr(cond, instructions);
-                    InstructionBuilder::new(instructions).jump_if_zero(condition_val, end_label.clone());
+                    InstructionBuilder::new(instructions)
+                        .jump_if_zero(condition_val, end_label.clone());
                 }
 
                 self.convert_stmt(*body, instructions);
@@ -227,17 +229,15 @@ impl StatementConverter for TackyParser {
                     InstructionBuilder::new(instructions).jump(format!("{}_end", switch_label));
                 }
 
-                self.emit_switch_body(*body, instructions, cases.as_slice(),&default_label);
+                self.emit_switch_body(*body, instructions, cases.as_slice(), &default_label);
 
                 InstructionBuilder::new(instructions).label(format!("{}_end", switch_label));
-
             }
             Stmt::Case { body, .. } | Stmt::Default { body } => {
                 self.convert_stmt(*body, instructions);
             }
         }
     }
-
 
     fn convert_stmt_with_case_labels(
         &mut self,

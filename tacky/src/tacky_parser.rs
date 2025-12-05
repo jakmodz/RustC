@@ -6,12 +6,14 @@ use crate::tacky::{BinaryOp, TackyFunction, TackyInstruction, Val};
 use crate::conver_stmt::StatementConverter;
 use crate::convert_expr::ExpressionConverter;
 use crate::instruction_builder::InstructionBuilder;
-use ast::ast::{Annotation, BlockElement, Declaration, Expression, ForInit, Program, Stmt, SwitchCase};
+use ast::ast::{
+    Annotation, BlockElement, Declaration, Expression, ForInit, Program, Stmt, SwitchCase,
+};
 
 pub struct TackyParser {
     pub var_counter: usize,
     pub label_generator: LabelGenerator,
-    pub(crate) current_switch_label: Option<String>
+    pub(crate) current_switch_label: Option<String>,
 }
 
 impl TackyParser {
@@ -19,7 +21,7 @@ impl TackyParser {
         Self {
             var_counter,
             label_generator: LabelGenerator::new(),
-            current_switch_label: None
+            current_switch_label: None,
         }
     }
 
@@ -28,7 +30,6 @@ impl TackyParser {
         self.var_counter += 1;
         s
     }
-
 
     pub fn emit_tacky(&mut self, ast: Program) -> tacky::Program {
         let mut body = Vec::new();
@@ -69,7 +70,11 @@ impl TackyParser {
         }
     }
 
-    pub(crate) fn convert_declaration(&mut self, decl: Declaration, body: &mut Vec<tacky::TackyInstruction>) {
+    pub(crate) fn convert_declaration(
+        &mut self,
+        decl: Declaration,
+        body: &mut Vec<tacky::TackyInstruction>,
+    ) {
         match decl {
             Declaration::DefineVar {
                 var_name,
@@ -155,7 +160,6 @@ impl TackyParser {
         default_label: &Option<String>,
     ) {
         match stmt {
-
             Stmt::Case { value, body } => {
                 if let Expression::Constant(val) = value {
                     if let Some(case) = cases.iter().find(|c| c.value == val) {
@@ -173,7 +177,6 @@ impl TackyParser {
             }
 
             Stmt::Break(Annotation::None) => {
-
                 if let Some(end_label) = &self.current_switch_label {
                     InstructionBuilder::new(instructions).jump(end_label.clone());
                 }
@@ -195,7 +198,11 @@ impl TackyParser {
                 }
             }
 
-            Stmt::If { condition, then_branch, else_branch } => {
+            Stmt::If {
+                condition,
+                then_branch,
+                else_branch,
+            } => {
                 let c = self.convert_expr(condition, instructions);
                 if let Some(else_br) = else_branch {
                     let else_label = self.label_generator.generate_label("else_label");
@@ -215,7 +222,11 @@ impl TackyParser {
                 }
             }
 
-            Stmt::While { body, condition, annotation } => {
+            Stmt::While {
+                body,
+                condition,
+                annotation,
+            } => {
                 let loop_label = match annotation {
                     Annotation::LoopLabel(label) => label,
                     _ => self.label_generator.generate_label("while"),
@@ -229,10 +240,16 @@ impl TackyParser {
                 InstructionBuilder::new(instructions).jump_if_zero(c, end_label.clone());
 
                 self.emit_switch_body(*body, instructions, cases, default_label);
-                InstructionBuilder::new(instructions).jump(continue_label).label(end_label);
+                InstructionBuilder::new(instructions)
+                    .jump(continue_label)
+                    .label(end_label);
             }
 
-            Stmt::DoWhile { body, condition, annotation } => {
+            Stmt::DoWhile {
+                body,
+                condition,
+                annotation,
+            } => {
                 let loop_label = match annotation {
                     Annotation::LoopLabel(label) => label,
                     _ => self.label_generator.generate_label("do"),
@@ -246,10 +263,18 @@ impl TackyParser {
                 self.emit_switch_body(*body, instructions, cases, default_label);
                 InstructionBuilder::new(instructions).label(continue_label);
                 let v = self.convert_expr(condition, instructions);
-                InstructionBuilder::new(instructions).jump_if_not_zero(v, start_label).label(end_label);
+                InstructionBuilder::new(instructions)
+                    .jump_if_not_zero(v, start_label)
+                    .label(end_label);
             }
 
-            Stmt::For { init, condition, increment, body, annotation } => {
+            Stmt::For {
+                init,
+                condition,
+                increment,
+                body,
+                annotation,
+            } => {
                 let loop_label = match annotation {
                     Annotation::LoopLabel(label) => label,
                     _ => self.label_generator.generate_label("for"),
@@ -264,7 +289,8 @@ impl TackyParser {
 
                 if let Some(cond) = condition {
                     let condition_val = self.convert_expr(cond, instructions);
-                    InstructionBuilder::new(instructions).jump_if_zero(condition_val, end_label.clone());
+                    InstructionBuilder::new(instructions)
+                        .jump_if_zero(condition_val, end_label.clone());
                 }
 
                 self.emit_switch_body(*body, instructions, cases, default_label);
@@ -274,7 +300,9 @@ impl TackyParser {
                     self.convert_expr(inc, instructions);
                 }
 
-                InstructionBuilder::new(instructions).jump(start_label).label(end_label);
+                InstructionBuilder::new(instructions)
+                    .jump(start_label)
+                    .label(end_label);
             }
 
             Stmt::Switch { .. } => {

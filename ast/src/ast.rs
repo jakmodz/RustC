@@ -84,12 +84,12 @@ pub enum Stmt {
         cases: Vec<SwitchCase>,
         default_label: Option<String>,
     },
-    Case{
-        value:Expression,
-        body:Box<Stmt>,
+    Case {
+        value: Expression,
+        body: Box<Stmt>,
     },
-    Default{
-        body:Box<Stmt>,
+    Default {
+        body: Box<Stmt>,
     },
     Goto(String),
     Label(String),

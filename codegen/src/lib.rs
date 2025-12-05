@@ -7,6 +7,7 @@ mod tests {
     use super::*;
     use crate::ast_parser::AsmParser;
     use semantic_analysis::SemanticAnalyzer;
+    use tacky::tacky_parser::TackyParser;
 
     use std::io::{Write, stdout};
 
@@ -46,16 +47,15 @@ mod tests {
         let mut ast = parser.parse().unwrap();
         let mut analyzer = SemanticAnalyzer::new();
         analyzer.analyze(&mut ast).unwrap();
-
-        println!("{:#?}", ast);
-
-        let programsm_ast = AsmParser::new().parse(program);
+        let tacky_program: tacky::tacky::Program =
+            TackyParser::new(analyzer.var_count).emit_tacky(ast);
+        let programsm_ast = AsmParser::new().parse(tacky_program);
         let mut asm_gen = asm_generator::AsmGenerator::new();
         let out: Vec<Box<dyn Write>> = vec![
             Box::new(stdout()),
             Box::new(std::fs::File::create("output.s")?),
         ];
-        asm_gen.write(asm_ast, out)?;
+        asm_gen.write(programsm_ast, out)?;
         Ok(())
     }
 }

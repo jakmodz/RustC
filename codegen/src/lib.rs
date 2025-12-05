@@ -7,10 +7,8 @@ mod tests {
     use super::*;
     use crate::ast_parser::AsmParser;
     use semantic_analysis::SemanticAnalyzer;
+
     use std::io::{Write, stdout};
-    use tacky::tacky_parser;
-    use semantic_analysis::switch_analyze;
-    use semantic_analysis::switch_analyze::SwitchAnalyzer;
 
     #[test]
     fn test_asm_gen() -> std::io::Result<()> {
@@ -49,11 +47,9 @@ mod tests {
         let mut analyzer = SemanticAnalyzer::new();
         analyzer.analyze(&mut ast).unwrap();
 
-
         println!("{:#?}", ast);
-        let tacky = tacky_parser::TackyParser::new(analyzer.var_count).emit_tacky(ast);
 
-        let asm_ast = AsmParser::new().parse(tacky);
+        let programsm_ast = AsmParser::new().parse(program);
         let mut asm_gen = asm_generator::AsmGenerator::new();
         let out: Vec<Box<dyn Write>> = vec![
             Box::new(stdout()),

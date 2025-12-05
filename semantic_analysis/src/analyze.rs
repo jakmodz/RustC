@@ -1,5 +1,6 @@
 use crate::SemanticError;
 use crate::map_entry::VariableEntry;
+use crate::switch_analyze::SwitchAnalyzer;
 use ast::ast::BlockElement;
 use ast::ast::Declaration;
 use ast::ast::Program;
@@ -7,7 +8,6 @@ use ast::ast::*;
 use std::collections::{HashMap, HashSet};
 use std::iter::Peekable;
 use std::slice::Iter;
-use crate::switch_analyze::SwitchAnalyzer;
 
 pub struct SemanticAnalyzer {
     variables: HashMap<String, VariableEntry>,
@@ -194,7 +194,13 @@ impl SemanticAnalyzer {
                     annotation: Annotation::None,
                 })
             }
-            Stmt::Switch { expr, body, annotation, cases, default_label } => {
+            Stmt::Switch {
+                expr,
+                body,
+                annotation,
+                cases,
+                default_label,
+            } => {
                 let resolved_expr = self.resolve_expression(expr)?;
                 let resolved_body = Box::new(self.resolve_statement(body)?);
                 Ok(Stmt::Switch {
@@ -379,115 +385,6 @@ impl SemanticAnalyzer {
                 Ok(stmt.clone())
             }
             _ => Ok(stmt.clone()),
-        }
-    }
-
-    fn make_loop_label(&mut self) -> String {
-        let label = format!("_loop_{}", self.loop_count);
-        self.loop_count += 1;
-        label
-    }
-
-    fn analyze_loop_labels(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
-        for element in ast.function.body.elements.iter_mut() {
-            if let BlockElement::Stmt(stmt) = element {
-                self.label_loops(stmt, None)?;
-            }
-        }
-        Ok(())
-    }
-
-    fn label_loops(
-        &mut self,
-        stmt: &mut Stmt,
-        current_label: Option<String>,
-    ) -> Result<(), SemanticError> {
-        match stmt {
-            Stmt::Break(label) => {
-                if let Some(loop_label) = current_label {
-                    // We're inside a loop - break should exit the loop
-                    *label = Annotation::LoopLabel(loop_label);
-                    Ok(())
-                } else if matches!(label, Annotation::SwitchLabel(_)) {
-                    // Already has a switch label and no loop context - keep it
-                    Ok(())
-                } else if matches!(label, Annotation::None) {
-                    Err(SemanticError::JumpStmtNotInLoop {
-                        stmt: "Break".to_string(),
-                    })
-                } else {
-                    Ok(())
-                }
-            }
-
-            Stmt::Continue(label) => {
-                if let Some(loop_label) = current_label {
-                    *label = Annotation::LoopLabel(loop_label);
-                    Ok(())
-                } else {
-                    Err(SemanticError::JumpStmtNotInLoop {
-                        stmt: "Continue".to_string(),
-                    })
-                }
-            }
-            Stmt::While {
-                body, annotation, ..
-            } => {
-                let loop_label = self.make_loop_label();
-                *annotation = Annotation::LoopLabel(loop_label.clone());
-                self.label_loops(body, Some(loop_label))
-            }
-            Stmt::DoWhile {
-                body, annotation, ..
-            } => {
-                let loop_label = self.make_loop_label();
-                *annotation = Annotation::LoopLabel(loop_label.clone());
-                self.label_loops(body, Some(loop_label))
-            }
-            Stmt::For {
-                body, annotation, ..
-            } => {
-                let loop_label = self.make_loop_label();
-                *annotation = Annotation::LoopLabel(loop_label.clone());
-                self.label_loops(body, Some(loop_label))
-            }
-            Stmt::If {
-                else_branch,
-                then_branch,
-                ..
-            } => {
-                self.label_loops(then_branch, current_label.clone())?;
-                if let Some(else_branch) = else_branch {
-                    self.label_loops(else_branch, current_label)?;
-                }
-                Ok(())
-            }
-            Stmt::Compound { block } => {
-                for element in block.elements.iter_mut() {
-                    if let BlockElement::Stmt(stmt) = element {
-                        self.label_loops(stmt, current_label.clone())?;
-                    }
-                }
-                Ok(())
-            }
-
-            // NEW: descend into switch to label nested loops and jump statements
-            Stmt::Switch { body, .. } => {
-                self.label_loops(body, current_label.clone())?;
-                Ok(())
-            }
-
-            // NEW: descend into case/default bodies
-            Stmt::Case { body, .. } => {
-                self.label_loops(body, current_label.clone())?;
-                Ok(())
-            }
-            Stmt::Default { body } => {
-                self.label_loops(body, current_label.clone())?;
-                Ok(())
-            }
-
-            _ => Ok(()),
         }
     }
 }

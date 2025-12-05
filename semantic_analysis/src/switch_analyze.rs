@@ -1,7 +1,13 @@
-use ast::ast::{Annotation, BlockElement, Expression, Program, Stmt, SwitchCase};
 use crate::{SemanticAnalyzer, SemanticError};
+use ast::ast::{Annotation, BlockElement, Expression, Program, Stmt, SwitchCase};
 
-pub trait SwitchAnalyzer {
+#[derive(Clone, Copy, PartialEq)]
+pub(crate) enum BreakTarget {
+    Loop,
+    Switch,
+}
+
+pub(crate) trait SwitchAnalyzer {
     fn analyze_control_flow(&mut self, ast: &mut Program) -> Result<(), SemanticError>;
     fn collect_cases_recursive(
         &mut self,
@@ -21,6 +27,7 @@ pub trait SwitchAnalyzer {
         stmt: &mut Stmt,
         current_switch: Option<String>,
         current_loop: Option<String>,
+        break_target: Option<BreakTarget>,
     ) -> Result<(), SemanticError>;
     fn make_switch_label(&mut self) -> String;
     fn make_loop_label(&mut self) -> String;
@@ -30,7 +37,7 @@ impl SwitchAnalyzer for SemanticAnalyzer {
     fn analyze_control_flow(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
         for element in ast.function.body.elements.iter_mut() {
             if let BlockElement::Stmt(stmt) = element {
-                self.process_control_flow(stmt, None, None)?;
+                self.process_control_flow(stmt, None, None, None)?;
             }
         }
         Ok(())
@@ -74,20 +81,36 @@ impl SwitchAnalyzer for SemanticAnalyzer {
                 for element in &block.elements {
                     if let BlockElement::Stmt(s) = element {
                         self.collect_cases_recursive(
-                            s, switch_label, cases, default_label, seen_values
+                            s,
+                            switch_label,
+                            cases,
+                            default_label,
+                            seen_values,
                         )?;
                     }
                 }
                 Ok(())
             }
 
-            Stmt::If { then_branch, else_branch, .. } => {
+            Stmt::If {
+                then_branch,
+                else_branch,
+                ..
+            } => {
                 self.collect_cases_recursive(
-                    then_branch, switch_label, cases, default_label, seen_values
+                    then_branch,
+                    switch_label,
+                    cases,
+                    default_label,
+                    seen_values,
                 )?;
                 if let Some(else_br) = else_branch {
                     self.collect_cases_recursive(
-                        else_br, switch_label, cases, default_label, seen_values
+                        else_br,
+                        switch_label,
+                        cases,
+                        default_label,
+                        seen_values,
                     )?;
                 }
                 Ok(())
@@ -96,9 +119,7 @@ impl SwitchAnalyzer for SemanticAnalyzer {
             Stmt::Switch { .. } => Ok(()),
 
             Stmt::While { body, .. } | Stmt::DoWhile { body, .. } | Stmt::For { body, .. } => {
-                self.collect_cases_recursive(
-                    body, switch_label, cases, default_label, seen_values
-                )
+                self.collect_cases_recursive(body, switch_label, cases, default_label, seen_values)
             }
 
             _ => Ok(()),
@@ -130,9 +151,16 @@ impl SwitchAnalyzer for SemanticAnalyzer {
         stmt: &mut Stmt,
         current_switch: Option<String>,
         current_loop: Option<String>,
+        break_target: Option<BreakTarget>,
     ) -> Result<(), SemanticError> {
         match stmt {
-            Stmt::Switch { body, annotation, cases, default_label, .. } => {
+            Stmt::Switch {
+                body,
+                annotation,
+                cases,
+                default_label,
+                ..
+            } => {
                 let switch_label = self.make_switch_label();
                 *annotation = Annotation::SwitchLabel(switch_label.clone());
 
@@ -141,9 +169,12 @@ impl SwitchAnalyzer for SemanticAnalyzer {
 
                 *cases = collected_cases;
                 *default_label = collected_default;
-
-                // Process the body, passing current_loop through
-                self.process_control_flow(body, Some(switch_label), current_loop)
+                self.process_control_flow(
+                    body,
+                    Some(switch_label),
+                    current_loop,
+                    Some(BreakTarget::Switch),
+                )
             }
 
             Stmt::Case { value, body } => {
@@ -155,7 +186,7 @@ impl SwitchAnalyzer for SemanticAnalyzer {
                     return Err(SemanticError::CaseOutsideSwitch);
                 }
 
-                self.process_control_flow(body, current_switch, current_loop)
+                self.process_control_flow(body, current_switch, current_loop, break_target)
             }
 
             Stmt::Default { body } => {
@@ -163,13 +194,12 @@ impl SwitchAnalyzer for SemanticAnalyzer {
                     return Err(SemanticError::DefaultOutsideSwitch);
                 }
 
-                self.process_control_flow(body, current_switch, current_loop)
+                self.process_control_flow(body, current_switch, current_loop, break_target)
             }
 
             Stmt::Continue(label) => {
-                // Continue is ONLY valid in loops
-                if let Some(loop_label) = &current_loop {
-                    *label = Annotation::LoopLabel(loop_label.clone());
+                if let Some(loop_label) = current_loop {
+                    *label = Annotation::LoopLabel(loop_label);
                     Ok(())
                 } else {
                     Err(SemanticError::JumpStmtNotInLoop {
@@ -177,43 +207,85 @@ impl SwitchAnalyzer for SemanticAnalyzer {
                     })
                 }
             }
-            Stmt::Break(label) => {
-                if let Some(loop_label) = &current_loop {
-                    *label = Annotation::LoopLabel(loop_label.clone());
-                    Ok(())
-                } else if let Some(switch_label) = &current_switch {
-                    *label = Annotation::SwitchLabel(switch_label.clone());
-                    Ok(())
-                } else {
-                    Err(SemanticError::JumpStmtNotInLoop {
-                        stmt: "Break".to_string(),
-                    })
+
+            Stmt::Break(label) => match break_target {
+                Some(BreakTarget::Switch) => {
+                    if let Some(switch_label) = current_switch {
+                        *label = Annotation::SwitchLabel(switch_label);
+                        Ok(())
+                    } else {
+                        Err(SemanticError::JumpStmtNotInLoop {
+                            stmt: "Break".to_string(),
+                        })
+                    }
                 }
-            }
+                Some(BreakTarget::Loop) => {
+                    if let Some(loop_label) = current_loop {
+                        *label = Annotation::LoopLabel(loop_label);
+                        Ok(())
+                    } else {
+                        Err(SemanticError::JumpStmtNotInLoop {
+                            stmt: "Break".to_string(),
+                        })
+                    }
+                }
+                None => Err(SemanticError::JumpStmtNotInLoop {
+                    stmt: "Break".to_string(),
+                }),
+            },
 
-            Stmt::While { body, annotation, .. } => {
+            Stmt::While {
+                body, annotation, ..
+            } => {
                 let loop_label = self.make_loop_label();
                 *annotation = Annotation::LoopLabel(loop_label.clone());
-                // Pass the loop label as current_loop, preserve current_switch
-                self.process_control_flow(body, current_switch, Some(loop_label))
+                self.process_control_flow(
+                    body,
+                    current_switch,
+                    Some(loop_label),
+                    Some(BreakTarget::Loop),
+                )
             }
 
-            Stmt::DoWhile { body, annotation, .. } => {
+            Stmt::DoWhile {
+                body, annotation, ..
+            } => {
                 let loop_label = self.make_loop_label();
                 *annotation = Annotation::LoopLabel(loop_label.clone());
-                self.process_control_flow(body, current_switch, Some(loop_label))
+                self.process_control_flow(
+                    body,
+                    current_switch,
+                    Some(loop_label),
+                    Some(BreakTarget::Loop),
+                )
             }
 
-            Stmt::For { body, annotation, .. } => {
+            Stmt::For {
+                body, annotation, ..
+            } => {
                 let loop_label = self.make_loop_label();
                 *annotation = Annotation::LoopLabel(loop_label.clone());
-                self.process_control_flow(body, current_switch, Some(loop_label))
+                self.process_control_flow(
+                    body,
+                    current_switch,
+                    Some(loop_label),
+                    Some(BreakTarget::Loop),
+                )
             }
 
-            Stmt::If { then_branch, else_branch, .. } => {
-                self.process_control_flow(then_branch, current_switch.clone(), current_loop.clone())?;
+            Stmt::If {
+                then_branch,
+                else_branch,
+                ..
+            } => {
+                self.process_control_flow(
+                    then_branch,
+                    current_switch.clone(),
+                    current_loop.clone(),
+                    break_target,
+                )?;
                 if let Some(else_br) = else_branch {
-                    self.process_control_flow(else_br, current_switch, current_loop)?;
+                    self.process_control_flow(else_br, current_switch, current_loop, break_target)?;
                 }
                 Ok(())
             }
@@ -221,7 +293,12 @@ impl SwitchAnalyzer for SemanticAnalyzer {
             Stmt::Compound { block } => {
                 for element in block.elements.iter_mut() {
                     if let BlockElement::Stmt(s) = element {
-                        self.process_control_flow(s, current_switch.clone(), current_loop.clone())?;
+                        self.process_control_flow(
+                            s,
+                            current_switch.clone(),
+                            current_loop.clone(),
+                            break_target,
+                        )?;
                     }
                 }
                 Ok(())

@@ -1,8 +1,10 @@
 use crate::SemanticError;
 use crate::map_entry::VariableEntry;
 use crate::switch_analyze::SwitchAnalyzer;
+use ast::Declaration;
+use ast::Expression;
+use ast::Stmt;
 use ast::ast::BlockElement;
-use ast::ast::Declaration;
 use ast::ast::Program;
 use ast::ast::*;
 use std::collections::{HashMap, HashSet};
@@ -97,7 +99,7 @@ impl SemanticAnalyzer {
         }
     }
 
-    fn resolve_statement(&mut self, stmt: &Stmt) -> Result<Stmt, SemanticError> {
+    fn resolve_statement(&mut self, stmt: &Stmt) -> Result<Stmt,SemanticError> {
         match stmt {
             Stmt::Expression { expr } => {
                 let resolved_expr = self.resolve_expression(expr)?;

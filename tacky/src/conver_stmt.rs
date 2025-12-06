@@ -3,7 +3,8 @@ use crate::instruction_builder::InstructionBuilder;
 use crate::tacky;
 use crate::tacky::{BinaryOp, TackyInstruction, Val};
 use crate::tacky_parser::TackyParser;
-use ast::ast::{Annotation, BlockElement, Expression, ForInit, Stmt, SwitchCase};
+use ast::{Expression, Stmt};
+use ast::ast::{Annotation, BlockElement, ForInit, SwitchCase};
 
 pub trait StatementConverter {
     fn convert_stmt(&mut self, stmt: Stmt, instructions: &mut Vec<tacky::TackyInstruction>);

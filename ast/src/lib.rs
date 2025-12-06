@@ -1,6 +1,12 @@
 pub mod ast;
 pub mod parser;
 pub mod parser_error;
+mod expr;
+mod stmt;
+mod decl;
+pub use decl::Declaration;
+pub use expr::Expression;
+pub use stmt::Stmt;
 
 #[cfg(test)]
 mod tests {

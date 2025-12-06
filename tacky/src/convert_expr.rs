@@ -3,7 +3,8 @@ use crate::tacky;
 use crate::tacky::Val::Constant;
 use crate::tacky::{BinaryOp, TackyInstruction, Val};
 use crate::tacky_parser::TackyParser;
-use ast::ast::Expression;
+
+use ast::Expression;
 use lex::token::TokenType;
 
 pub trait ExpressionConverter {

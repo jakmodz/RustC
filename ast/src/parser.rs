@@ -1,5 +1,5 @@
-use crate::{Declaration, Expression, Stmt, ast::*};
 use crate::parser_error::ParserError;
+use crate::{Declaration, Expression, Stmt, ast::*};
 use lex::token;
 use lex::token::{Token, TokenType};
 

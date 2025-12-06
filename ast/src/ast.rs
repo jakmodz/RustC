@@ -1,4 +1,3 @@
-
 use crate::{Declaration, Expression, Stmt};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -42,4 +41,3 @@ pub struct SwitchCase {
     pub value: i64,
     pub label: String,
 }
-

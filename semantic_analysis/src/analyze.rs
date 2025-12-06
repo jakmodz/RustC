@@ -99,7 +99,7 @@ impl SemanticAnalyzer {
         }
     }
 
-    fn resolve_statement(&mut self, stmt: &Stmt) -> Result<Stmt,SemanticError> {
+    fn resolve_statement(&mut self, stmt: &Stmt) -> Result<Stmt, SemanticError> {
         match stmt {
             Stmt::Expression { expr } => {
                 let resolved_expr = self.resolve_expression(expr)?;

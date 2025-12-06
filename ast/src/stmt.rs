@@ -1,4 +1,7 @@
-use crate::{Expression, ast::{Annotation, Block, ForInit, SwitchCase}};
+use crate::{
+    Expression,
+    ast::{Annotation, Block, ForInit, SwitchCase},
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {

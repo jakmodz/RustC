@@ -1,5 +1,8 @@
 use crate::{SemanticAnalyzer, SemanticError};
-use ast::{Expression, Stmt, ast::{Annotation, BlockElement,  Program,SwitchCase}};
+use ast::{
+    Expression, Stmt,
+    ast::{Annotation, BlockElement, Program, SwitchCase},
+};
 
 #[derive(Clone, Copy, PartialEq)]
 pub(crate) enum BreakTarget {

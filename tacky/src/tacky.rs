@@ -1,6 +1,6 @@
 #[derive(Debug)]
 pub struct Program {
-    pub function: TackyFunction,
+    pub functions: Vec<TackyFunction>,
 }
 #[derive(Debug)]
 pub struct TackyFunction {

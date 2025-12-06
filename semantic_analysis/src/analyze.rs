@@ -60,42 +60,44 @@ impl SemanticAnalyzer {
     }
 
     pub fn variable_resolution(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
-        ast.function.body.elements = self.resolve_block(&ast.function.body.elements)?;
+        for func in ast.functions.iter_mut() {
+            if let Some(body) = &mut func.body {
+                body.elements = self.resolve_block(&body.elements)?;
+            }
+        }
         Ok(())
     }
 
     fn resolve_declaration(&mut self, decl: &Declaration) -> Result<Declaration, SemanticError> {
         match decl {
-            Declaration::DefineVar {
-                var_name,
-                initializer,
-            } => {
-                if let Some(entry) = self.variables.get(var_name) {
+            Declaration::DefineVar(var) => {
+                if let Some(entry) = self.variables.get(var.name.as_str()) {
                     if entry.from_current_block {
                         return Err(SemanticError::MultipleDeclaration {
-                            var_name: var_name.to_string(),
+                            var_name: var.name.to_string(),
                         });
                     }
                 }
 
-                let unique_name = format!("{}.{}", var_name, self.var_count);
+                let unique_name = format!("{}.{}", var.name, self.var_count);
                 self.var_count += 1;
 
                 self.variables.insert(
-                    var_name.to_string(),
+                    var.name.to_string(),
                     VariableEntry::new(unique_name.clone(), true),
                 );
 
-                let resolved_init = match initializer {
-                    Some(expr) => Some(self.resolve_expression(expr)?),
+                let resolved_init = match var.init.as_ref() {
+                    Some(expr) => Some(self.resolve_expression(&expr)?),
                     None => None,
                 };
 
-                Ok(Declaration::DefineVar {
-                    var_name: unique_name,
-                    initializer: resolved_init,
-                })
+                Ok(Declaration::DefineVar (VariableDecl { 
+                    name: unique_name, 
+                    init:resolved_init }
+                ))
             }
+            _ => Ok(decl.clone()),
         }
     }
 
@@ -299,7 +301,17 @@ impl SemanticAnalyzer {
 
     fn resolve_for_init(&mut self, init: &ForInit) -> Result<ForInit, SemanticError> {
         match init {
-            ForInit::Declaration(decl) => Ok(ForInit::Declaration(self.resolve_declaration(decl)?)),
+            ForInit::Declaration(decl) => {
+                let decl = Declaration::DefineVar(decl.clone()); 
+                let res = self.resolve_declaration(&decl)?;
+                Ok(ForInit::Declaration(
+                    if let Declaration::DefineVar(var_decl) = res {
+                        var_decl
+                    } else {
+                        unreachable!()
+                    }
+                ))
+            },
             ForInit::Expression(expr_opt) => {
                 let resolved_expr_opt = match expr_opt {
                     Some(expr) => Some(self.resolve_expression(expr)?),
@@ -321,16 +333,20 @@ impl SemanticAnalyzer {
     }
 
     fn analyze_goto_statements(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
-        let mut iter = ast.function.body.elements.iter().peekable();
-        while let Some(element) = iter.next() {
-            if let BlockElement::Stmt(stmt) = element {
-                self.resolve_label(stmt, &mut iter)?;
-            }
-        }
-        for element in ast.function.body.elements.iter_mut() {
-            if let BlockElement::Stmt(stmt) = element {
-                self.resolve_goto(stmt)?;
-            }
+        for func in ast.functions.iter_mut() {
+            if let Some(body) = &mut func.body {
+                let mut iter = body.elements.iter().peekable();
+                while let Some(element) = iter.next() {
+                    if let BlockElement::Stmt(stmt) = element {
+                        self.resolve_label(stmt, &mut iter)?;
+                    }
+                }
+                for element in body.elements.iter_mut() {
+                    if let BlockElement::Stmt(stmt) = element {
+                        self.resolve_goto(stmt)?;
+                    }
+                }
+            } 
         }
         Ok(())
     }

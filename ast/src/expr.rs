@@ -40,4 +40,8 @@ pub enum Expression {
         expr1: Box<Expression>,
         expr2: Box<Expression>,
     },
+    FunctionCall {
+        func_name: String,
+        args: Vec<Expression>,
+    },
 }

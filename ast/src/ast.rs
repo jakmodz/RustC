@@ -10,13 +10,14 @@ pub enum Annotation {
 
 #[derive(Debug, Clone)]
 pub struct Program {
-    pub function: Function,
+    pub functions: Vec<FuncDecl>
 }
 
-#[derive(Debug, Clone)]
-pub struct Function {
+#[derive(Debug, Clone,PartialEq)]
+pub struct FuncDecl {
     pub name: String,
-    pub body: Block,
+    pub params: Vec<String>,
+    pub body: Option<Block>,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum BlockElement {
@@ -34,8 +35,13 @@ impl Block {
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum ForInit {
-    Declaration(Declaration),
+    Declaration(VariableDecl),
     Expression(Option<Expression>),
+}
+#[derive(Debug, Clone, PartialEq)]
+pub struct VariableDecl {
+    pub name: String,
+    pub init: Option<Expression>,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub struct SwitchCase {

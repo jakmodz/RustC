@@ -4,6 +4,10 @@ pub mod parser_error;
 mod expr;
 mod stmt;
 mod decl;
+mod parse_expr;
+mod parse_stmt;
+pub(crate) use parse_expr::ParseExpr;
+pub(crate) use parse_stmt::ParseStmt;
 pub use decl::Declaration;
 pub use expr::Expression;
 pub use stmt::Stmt;
@@ -37,8 +41,8 @@ mod tests {
         let tokens = lexer.tokenize(source).unwrap();
         let mut parser = crate::parser::Parser::new(tokens);
         let ast = parser.parse().unwrap();
-        assert_eq!(ast.function.name, String::from("main"));
-        assert_eq!(ast.function.body.elements.len(), 3);
+        assert_eq!(ast.functions[0].name, String::from("main"));
+        assert_eq!(ast.functions[0].body.as_ref().unwrap().elements.len(), 3);
     }
     #[test]
     fn goto_label() {
@@ -53,7 +57,7 @@ label1:
         let tokens = lexer.tokenize(source).unwrap();
         let mut parser = crate::parser::Parser::new(tokens);
         let ast = parser.parse().unwrap();
-        assert_eq!(ast.function.name, String::from("main"));
-        assert_eq!(ast.function.body.elements.len(), 3);
+        assert_eq!(ast.functions[0].name, String::from("main"));
+        assert_eq!(ast.functions[0].body.as_ref().unwrap().elements.len(), 3);
     }
 }

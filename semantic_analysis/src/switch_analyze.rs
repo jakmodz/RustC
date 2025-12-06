@@ -35,9 +35,13 @@ pub(crate) trait SwitchAnalyzer {
 
 impl SwitchAnalyzer for SemanticAnalyzer {
     fn analyze_control_flow(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
-        for element in ast.function.body.elements.iter_mut() {
-            if let BlockElement::Stmt(stmt) = element {
-                self.process_control_flow(stmt, None, None, None)?;
+        for func in ast.functions.iter_mut() {
+            if let Some(body) = &mut func.body {
+                for element in body.elements.iter_mut() {
+                    if let BlockElement::Stmt(stmt) = element {
+                        self.process_control_flow(stmt, None, None, None)?;
+                    }
+                }
             }
         }
         Ok(())

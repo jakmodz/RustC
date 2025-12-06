@@ -10,15 +10,17 @@ impl AsmParser {
     }
 
     pub fn parse(&mut self, program: tacky::tacky::Program) -> AsmProgram {
+        todo!();
         let mut instructions = Vec::new();
-
-        for ins in program.function.body {
-            self.convert_instruction(ins, &mut instructions);
+        for func in program.functions.iter_mut() {
+            for ins in func.body {
+                self.convert_instruction(ins, &mut instructions);
+            }
         }
 
         AsmProgram {
             function: AsmFunction {
-                name: program.function.name,
+                name:  "main".to_string(),
                 instructions,
             },
         }

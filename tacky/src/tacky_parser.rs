@@ -6,8 +6,8 @@ use crate::tacky::{BinaryOp, TackyInstruction, Val};
 use crate::conver_stmt::StatementConverter;
 use crate::convert_expr::ExpressionConverter;
 use crate::instruction_builder::InstructionBuilder;
-use ast::{Declaration, Expression};
 use ast::ast::{Annotation, BlockElement, ForInit, Program};
+use ast::{Declaration, Expression};
 
 pub struct TackyParser {
     pub var_counter: usize,

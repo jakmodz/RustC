@@ -1,7 +1,5 @@
 use lex::token::Token;
 
-
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
     Constant(i64),

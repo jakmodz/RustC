@@ -13,7 +13,7 @@ impl Parser {
         Parser { tokens, pos: 0 }
     }
 
-    fn excepted_token(&mut self, expected: TokenType) -> Result<(), ParserError> {
+    fn excepted_token(&mut self, expected: TokenType) -> Result<Token, ParserError> {
         if self.pos >= self.tokens.len() {
             return Err(ParserError::UnexpectedEOF);
         }
@@ -27,14 +27,14 @@ impl Parser {
             ));
         }
         self.pos += 1;
-        Ok(())
+        Ok(current_token.clone())
     }
     fn except_token_optional(&mut self, expected: TokenType) -> Result<(), ParserError> {
         let res = self.excepted_token(expected);
-        if res.is_err() {
-            return res;
+        match res {
+            Ok(_) => Ok(()),
+            Err(err) => Err(err),
         }
-        Ok(())
     }
 
     fn peek(&mut self) -> Result<Token, ParserError> {
@@ -63,14 +63,13 @@ impl Parser {
     pub fn parse(&mut self) -> Result<Program, ParserError> {
         let mut function_body = Vec::new();
         self.excepted_token(TokenType::Int)?;
-        self.excepted_token(TokenType::Identifier)?;
+        let token = self.excepted_token(TokenType::Identifier)?;
         self.excepted_token(TokenType::OpenParen)?;
         self.except_token_optional(TokenType::Void)?;
         self.excepted_token(TokenType::CloseParen)?;
         self.excepted_token(TokenType::OpenBrace)?;
         while self.peek()?.get_token_type() != TokenType::CloseBrace {
             let block_item = self.parse_block_element()?;
-
             function_body.push(block_item);
         }
         self.eat()?;
@@ -83,11 +82,12 @@ impl Parser {
         }
         Ok(Program {
             function: Function {
-                name: "main".to_string(),
+                name: token.to_string(),
                 body: Block::new(function_body),
             },
         })
     }
+
     fn parse_block_element(&mut self) -> Result<BlockElement, ParserError> {
         let next_token = self.peek()?;
         match next_token.get_token_type() {

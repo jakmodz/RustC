@@ -98,6 +98,7 @@ pub enum TokenType {
     Switch,
     Case,
     Default,
+    Comma,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -166,6 +167,7 @@ pub enum Token {
     Switch(Span),
     Case(Span),
     Default(Span),
+    Comma(Span),
 }
 
 impl Token {
@@ -227,6 +229,7 @@ impl Token {
             Token::Switch(_) => TokenType::Switch,
             Token::Case(_) => TokenType::Case,
             Token::Default(_) => TokenType::Default,
+            Token::Comma(_) => TokenType::Comma,
         }
     }
 
@@ -287,6 +290,7 @@ impl Token {
             | Token::Switch(span)
             | Token::Case(span)
             | Token::Default(span)
+            | Token::Comma(span)
             | Token::Goto(span) => span,
         }
     }
@@ -346,6 +350,7 @@ impl Token {
             "switch" => Some(TokenType::Switch),
             "case" => Some(TokenType::Case),
             "default" => Some(TokenType::Default),
+            "," => Some(TokenType::Comma),
             _ => None,
         }
     }
@@ -407,6 +412,7 @@ impl Token {
             TokenType::Switch => Token::Switch(span),
             TokenType::Case => Token::Case(span),
             TokenType::Default => Token::Default(span),
+            TokenType::Comma => Token::Comma(span),
         }
     }
     pub fn is_binary_op(&self) -> bool {

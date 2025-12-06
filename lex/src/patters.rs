@@ -68,6 +68,7 @@ lazy_static! {
             (Regex::new(r"^>").unwrap(), TokenType::Greater),
             (Regex::new(r"^\?").unwrap(), TokenType::QuestionMark),
             (Regex::new(r"^:").unwrap(), TokenType::Colon),
+            (Regex::new(r"^,").unwrap(), TokenType::Comma),
         ]
     };
 

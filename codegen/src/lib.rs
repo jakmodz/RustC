@@ -14,7 +14,7 @@ mod tests {
     #[test]
     fn test_asm_gen() -> std::io::Result<()> {
         let source = String::from(
-            "int main(void) {
+            "int tara(void) {
     int acc = 0;
     int ctr = 0;
     for (int i = 0; i < 10; i = i + 1)  {

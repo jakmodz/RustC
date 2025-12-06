@@ -1,4 +1,3 @@
-// ============= Part 1: Fixed Statement Converter (conver_stmt.rs) =============
 use crate::convert_expr::*;
 use crate::instruction_builder::InstructionBuilder;
 use crate::tacky;

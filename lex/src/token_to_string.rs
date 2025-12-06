@@ -61,6 +61,7 @@ impl fmt::Display for Token {
             Token::Switch(_) => write!(f, "switch"),
             Token::Case(_) => write!(f, "case"),
             Token::Default(_) => write!(f, "default"),
+            Token::Comma(_) => write!(f, ","),
         }
     }
 }

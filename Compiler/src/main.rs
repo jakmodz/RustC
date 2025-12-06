@@ -27,8 +27,10 @@ enum CompilerError {
 #[derive(clap::Parser, Debug)]
 #[command(version,about,long_about = None)]
 struct Args {
+    #[arg(short)]
+    c: bool,
     //path to file
-    path: String,
+    paths: Vec<String>,
 
     //to lexer stage
     #[arg(long)]
@@ -70,79 +72,88 @@ fn main() {
 fn run() -> Result<(), CompilerError> {
     let args = Args::parse();
 
-    let mut file = File::open(&args.path)?;
-    let mut content = String::new();
-    file.read_to_string(&mut content)?;
-
-    /*
-      lexing stage
-    */
-    let mut lex = Lexer::new();
-    let tokens = lex.tokenize(content)?;
-    if args.lex {
-        return Ok(());
+   
+    let mut command = std::process::Command::new("gcc");
+    if args.c {
+        command.arg("-c");
     }
+    command.arg("-o");
+    //todo: multi files linking
+    for path in args.paths.iter() {
+        let mut file = File::open(path)?;
+        let mut content = String::new();
+        file.read_to_string(&mut content)?;
 
-    /*
-      parsing Stage
-    */
-    let mut parser = ast::parser::Parser::new(tokens);
-    let mut ast = parser.parse()?;
+        /*
+          lexing stage
+        */
+        let mut lex = Lexer::new();
+        let tokens = lex.tokenize(content)?;
+        if args.lex {
+            return Ok(());
+        }
 
-    if args.parse {
-        return Ok(());
-    }
+        /*
+          parsing Stage
+        */
+        let mut parser = ast::parser::Parser::new(tokens);
+        let mut ast = parser.parse()?;
 
-    /*
-        Semantic Validation Stage
-    */
-    let mut analyzer = SemanticAnalyzer::new();
-    analyzer.analyze(&mut ast)?;
+        if args.parse {
+            return Ok(());
+        }
 
-    if args.validate {
-        return Ok(());
-    }
-    /*
-    Tacky Generation Stage
-    */
-    let mut tacky_parser = tacky::tacky_parser::TackyParser::new(analyzer.var_count);
-    let tacky_program = tacky_parser.emit_tacky(ast.clone());
+        /*
+            Semantic Validation Stage
+        */
+        let mut analyzer = SemanticAnalyzer::new();
+        analyzer.analyze(&mut ast)?;
 
-    if args.tacky {
-        return Ok(());
-    }
-    /*
-     Assemble Stage
-    */
+        if args.validate {
+            return Ok(());
+        }
+        /*
+        Tacky Generation Stage
+        */
+        let mut tacky_parser = tacky::tacky_parser::TackyParser::new(analyzer.var_count);
+        let tacky_program = tacky_parser.emit_tacky(ast.clone());
 
-    let mut asm_gen = asm_generator::AsmGenerator::new();
-    let asm_ast = AsmParser::new().parse(tacky_program);
+        if args.tacky {
+            return Ok(());
+        }
+        /*
+         Assemble Stage
+        */
 
-    if args.codegen {
-        return Ok(());
-    }
-    let input_path = Path::new(&args.path);
-    let stem = input_path.file_stem().unwrap_or(OsStr::new("output"));
-    let parent = input_path.parent().unwrap_or_else(|| Path::new("."));
+        let mut asm_gen = asm_generator::AsmGenerator::new();
+        let asm_ast = AsmParser::new().parse(tacky_program);
 
-    let asm_path = parent.join(format!("{}.s", stem.to_string_lossy()));
+        if args.codegen {
+            return Ok(());
+        }
+        let input_path = Path::new(path);
+        let stem = input_path.file_stem().unwrap_or(OsStr::new("output"));
+        let parent = input_path.parent().unwrap_or_else(|| Path::new("."));
 
-    let output_path = parent.join(stem);
-    let file_out = File::create(&asm_path)?;
-    let out: Vec<Box<dyn Write>> = vec![Box::new(stdout()), Box::new(file_out)];
-    //TODO: end tacky generation. Making files more independent
-    asm_gen.write(asm_ast, out)?;
-    let status = std::process::Command::new("gcc")
-        .arg("-o")
+        let asm_path = parent.join(format!("{}.s", stem.to_string_lossy()));
+
+        let output_path = parent.join(stem);
+        let file_out = File::create(&asm_path)?;
+        let out: Vec<Box<dyn Write>> = vec![Box::new(stdout()), Box::new(file_out)];
+        asm_gen.write(asm_ast, out)?;
+        command 
         .arg(&output_path)
-        .arg(&asm_path)
+        .arg(&asm_path);
+    }
+  
+       
+    let status = command
         .status()
         .expect("failed to run gcc");
 
     if !status.success() {
-        eprintln!("gcc linking failed for {:?}", asm_path);
+        eprintln!("gcc linking failed: {}",status.to_string());
         exit(1);
     }
-
     Ok(())
 }

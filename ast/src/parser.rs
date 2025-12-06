@@ -31,14 +31,6 @@ impl Parser {
         self.pos += 1;
         Ok(current_token.clone())
     }
-    
-    pub(crate) fn except_token_optional(&mut self, expected: TokenType) -> Result<(), ParserError> {
-        let res = self.excepted_token(expected);
-        match res {
-            Ok(_) => Ok(()),
-            Err(err) => Err(err),
-        }
-    }
 
     pub(crate) fn peek(&mut self) -> Result<Token, ParserError> {
         if self.pos >= self.tokens.len() {

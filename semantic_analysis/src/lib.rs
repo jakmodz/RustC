@@ -1,8 +1,10 @@
 mod analyze;
 mod map_entry;
 mod semantic_error;
+mod goto_analyze;
 pub mod switch_analyze;
 
+pub(crate) use goto_analyze::GotoAnalyze;
 pub use analyze::SemanticAnalyzer;
 pub use semantic_error::SemanticError;
 #[cfg(test)]

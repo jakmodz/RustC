@@ -72,7 +72,6 @@ fn main() {
 fn run() -> Result<(), CompilerError> {
     let args = Args::parse();
 
-   
     let mut command = std::process::Command::new("gcc");
     if args.c {
         command.arg("-c");
@@ -141,18 +140,13 @@ fn run() -> Result<(), CompilerError> {
         let file_out = File::create(&asm_path)?;
         let out: Vec<Box<dyn Write>> = vec![Box::new(stdout()), Box::new(file_out)];
         asm_gen.write(asm_ast, out)?;
-        command 
-        .arg(&output_path)
-        .arg(&asm_path);
+        command.arg(&output_path).arg(&asm_path);
     }
-  
-       
-    let status = command
-        .status()
-        .expect("failed to run gcc");
+
+    let status = command.status().expect("failed to run gcc");
 
     if !status.success() {
-        eprintln!("gcc linking failed: {}",status.to_string());
+        eprintln!("gcc linking failed: {}", status.to_string());
         exit(1);
     }
     Ok(())

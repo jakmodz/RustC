@@ -34,4 +34,7 @@ pub enum SemanticError {
     DuplicateCase(i64),
     #[error("Multiple default labels in switch statement")]
     MultipleDefaults,
+    
+    #[error("Undeclared function '{func_name}'")]
+    UndeclaredFunction { func_name: String },
 }

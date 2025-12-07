@@ -56,4 +56,12 @@ impl<'a> InstructionBuilder<'a> {
         self.instructions.push(TackyInstruction::Return(val));
         self
     }
+    pub fn fn_call(&mut self,name:String,params:Vec<Val>,dst:Val)->&mut Self{
+        self.instructions.push(TackyInstruction::FnCall { 
+            fn_name: name, 
+            args: params, 
+            dst 
+        });
+        self
+    }
 }

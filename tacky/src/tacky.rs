@@ -36,6 +36,11 @@ pub enum TackyInstruction {
         cond: Val,
         target: String,
     },
+    FnCall{
+        fn_name: String,
+        args: Vec<Val>,
+        dst: Val
+    },
     Label(String),
 }
 

@@ -179,7 +179,16 @@ impl ExpressionConverter for TackyParser {
 
                 Val::Var(result_var)
             }
-            Expression::FunctionCall { func_name: _, args: _ } => unreachable!(),
+            Expression::FunctionCall { func_name: name, args: params } => {
+                let mut args_val = Vec::new();
+                for param in params.iter() {
+                    args_val.push(self.convert_expr(param.clone(), instructions));
+                }
+                let result = Val::Var(self.make_temporary());
+                InstructionBuilder::new(instructions)
+                    .fn_call(name, args_val, result.clone());
+                result
+            },
         }
     }
 }

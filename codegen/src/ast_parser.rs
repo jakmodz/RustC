@@ -158,6 +158,7 @@ impl AsmParser {
                 src: self.convert_val(src),
                 dst: self.convert_val(dst),
             }),
+            _=>todo!()
         }
     }
 

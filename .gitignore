@@ -2,3 +2,5 @@
 *.s
 .idea
 /Compiler/target
+,
+.DS_Store

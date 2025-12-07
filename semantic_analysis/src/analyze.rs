@@ -2,6 +2,8 @@ use crate::SemanticError;
 use crate::map_entry::SymbolKind;
 use crate::map_entry::VariableEntry;
 use crate::switch_analyze::SwitchAnalyzer;
+use crate::symbol_entry::SymbolEntry;
+use crate::type_checker::TypeChecker;
 use ast::Declaration;
 use ast::Expression;
 use ast::Stmt;
@@ -14,6 +16,7 @@ use crate::GotoAnalyze;
 pub struct SemanticAnalyzer {
     pub(crate) variables: HashMap<String, VariableEntry>,
     pub(crate) labels: HashSet<String>,
+    pub(crate) symbol_table: HashMap<String,SymbolEntry>,
     pub var_count: usize,
     pub(crate) loop_count: usize,
     pub(crate) switch_count: usize,
@@ -24,6 +27,7 @@ impl SemanticAnalyzer {
         Self {
             variables: HashMap::new(),
             labels: HashSet::new(),
+            symbol_table: HashMap::new(),
             var_count: 0,
             loop_count: 0,
             switch_count: 0,
@@ -54,6 +58,7 @@ impl SemanticAnalyzer {
 
     pub fn analyze(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
         self.variable_resolution(ast)?;
+        self.type_checking(ast)?;
         self.analyze_goto_statements(ast)?;
         self.analyze_control_flow(ast)?;
         Ok(())
@@ -68,7 +73,6 @@ impl SemanticAnalyzer {
             }
         Ok(())
     }
-
     fn resolve_declaration(&mut self, decl: &Declaration) -> Result<Declaration, SemanticError> {
         match decl {
             Declaration::DefineVar(var) => {
@@ -86,8 +90,8 @@ impl SemanticAnalyzer {
                     init:resolved_init }
                 ))
             }
-            Declaration::FuncDecl { decl: decl }=>{
-                Ok(self.resolve_function_declaration(decl)?)
+            Declaration::FuncDecl { decl: declaration }=>{
+                Ok(self.resolve_function_declaration(declaration)?)
             }
         }
     }
@@ -288,6 +292,12 @@ impl SemanticAnalyzer {
             }
             Expression::FunctionCall { func_name, args } => {
                 if self.variables.contains_key(func_name) {
+                    let entry = self.variables.get(func_name).unwrap();
+                    if !matches!(entry.kind, crate::map_entry::SymbolKind::Fun) {
+                        return Err(SemanticError::VariableAsFunctionName {
+                            var_name: func_name.clone(),
+                        });
+                    }
                     let new_name = self.get_resolved_function_name(func_name)?;
                     let mut resolved_args = Vec::new();
                     for arg in args.iter() {
@@ -340,52 +350,42 @@ impl SemanticAnalyzer {
         }
     }
     fn resolve_function_declaration(&mut self, decl: &FuncDecl) -> Result<Declaration, SemanticError> {
-        // Check for conflicts
         if let Some(prev) = self.variables.get(&decl.name) {
+            
             if prev.from_current_block && !prev.has_linkage {
                 return Err(SemanticError::MultipleDeclaration {
                     var_name: decl.name.clone(),
                 });
             }
         }
-    
-        // Add function name to current scope with external linkage
         self.variables.insert(
             decl.name.clone(),
             VariableEntry::new(
                 decl.name.clone(),
-                true,                    // from_current_block
+                true,
                 SymbolKind::Fun,
-                true,                    // has_linkage
+                true,
             ),
         );
     
-        // Create inner scope for parameters and body
-        // Copy AFTER adding function name so function can call itself
         let mut inner_map = self.variables.clone();
         
-        // Mark all entries as not from current block (they're from outer scopes)
         for entry in inner_map.values_mut() {
             entry.from_current_block = false;
         }
     
-        // Resolve parameters in the inner scope
         let mut resolved_params = Vec::new();
         for param in decl.params.iter() {
             let unique = self.insert_variable(param, &mut inner_map)?;
             resolved_params.push(unique);
         }
-    
-        // Resolve body if present
+        
         let resolved_body = if let Some(body) = &decl.body {
-            // Save current scope and temporarily use inner_map
             let saved_scope = std::mem::replace(&mut self.variables, inner_map);
             
-            // Resolve the body with parameters in scope
             let resolved_elements = self.resolve_block(&body.elements)?;
             
-            // Restore the inner_map after resolution (to extract any changes)
-            inner_map = std::mem::replace(&mut self.variables, saved_scope);
+            let _ =std::mem::replace(&mut self.variables, saved_scope);
             
             Some(Block::new(resolved_elements))
         } else {

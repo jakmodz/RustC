@@ -179,7 +179,7 @@ impl ExpressionConverter for TackyParser {
 
                 Val::Var(result_var)
             }
-            Expression::FunctionCall { func_name: _, args: _ } => todo!(),
+            Expression::FunctionCall { func_name: _, args: _ } => unreachable!(),
         }
     }
 }

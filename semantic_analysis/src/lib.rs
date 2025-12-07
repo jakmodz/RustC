@@ -2,6 +2,8 @@ mod analyze;
 mod map_entry;
 mod semantic_error;
 mod goto_analyze;
+mod type_checker;
+mod symbol_entry;
 pub mod switch_analyze;
 
 pub(crate) use goto_analyze::GotoAnalyze;

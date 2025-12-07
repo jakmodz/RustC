@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "ast",
-    "Compiler",
+    "compiler",
     "lex",
     "codegen",
     "tacky",

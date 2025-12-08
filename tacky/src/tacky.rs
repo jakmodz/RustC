@@ -5,9 +5,10 @@ pub struct Program {
 #[derive(Debug)]
 pub struct TackyFunction {
     pub name: String,
+    pub params: Vec<Val>,
     pub body: Vec<TackyInstruction>,
 }
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub enum TackyInstruction {
     Return(Val),
     Unary {

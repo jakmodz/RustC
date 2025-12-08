@@ -2,7 +2,7 @@ use tacky::tacky::{BinaryOp, UnaryOp};
 
 #[derive(Debug)]
 pub struct AsmProgram {
-    pub function: AsmFunction,
+    pub functions: Vec<AsmFunction>,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub struct AsmFunction {
@@ -50,6 +50,15 @@ pub enum Instruction {
     Allocate {
         size: usize,
     },
+    Deallocate{
+        size:usize
+    },
+    Push{
+        operand: Operand
+    },
+    Call{
+        name:String
+    },
     Ret,
 }
 
@@ -64,7 +73,12 @@ pub enum Operand {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Register {
     AX,
+    CX,
+    DI,
+    SI,
     DX,
+    R8,
+    R9,
     R10,
     R11,
 }

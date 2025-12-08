@@ -35,14 +35,20 @@ impl TackyParser {
         let mut functions = Vec::new();
         for func in ast.functions.iter_mut() {
             let mut body = Vec::new();
+            let mut params = Vec::new();
             if let Some(func_body) = func.body.take() {
                 self.convert_block(func_body, &mut body);
+                for param in &func.params {
+                    params.push(Val::Var(param.clone()));
+                }
+            
+                InstructionBuilder::new(&mut body).return_val(Constant(0));
+                functions.push(tacky::TackyFunction {
+                    name: func.name.clone(),
+                    params,
+                    body: body,
+                });
             }
-            InstructionBuilder::new(&mut body).return_val(Constant(0));
-            functions.push(tacky::TackyFunction {
-                name: func.name.clone(),
-                body: body,
-            });
         }
         
 

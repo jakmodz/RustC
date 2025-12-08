@@ -9,3 +9,4 @@ lex = {path = "../lex"}
 tacky = {path = "../tacky"}
 semantic_analysis = {path = "../semantic_analysis"}
 log = "0.4.28"
+lazy_static.workspace = true

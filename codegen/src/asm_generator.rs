@@ -1,18 +1,13 @@
 use crate::asm_ast::*;
-use std::collections::HashMap;
 use std::io::{Result, Write};
 
 pub struct AsmGenerator {
-    pub vars: HashMap<String, i64>,
     stack_offset: i64,
 }
 
 impl AsmGenerator {
     pub fn new() -> Self {
-        Self {
-            vars: HashMap::new(),
-            stack_offset: 0,
-        }
+        Self { stack_offset: 0 }
     }
 
     fn validate_operands(&self, src: &Operand, dst: &Operand) -> bool {
@@ -20,19 +15,22 @@ impl AsmGenerator {
             (src, dst),
             (Operand::Imn(_), Operand::Imn(_))
                 | (Operand::Stack(_), Operand::Stack(_))
-                | (Operand::Pseudo(_), Operand::Pseudo(_))
-                | (Operand::Stack(_), Operand::Pseudo(_))
-                | (Operand::Pseudo(_), Operand::Stack(_))
                 | (Operand::Reg(_), Operand::Imn(_))
         )
     }
 
     pub fn write(&mut self, program: AsmProgram, mut outputs: Vec<Box<dyn Write>>) -> Result<()> {
+        
         for out in outputs.iter_mut() {
-            self.write_function(out, &program.function)?;
             if cfg!(target_os = "macos") {
-            } else {
-                writeln!(out, ".section .note.GNU-stack,\"\",@progbits")?;
+                writeln!(out, "\t.section\t__TEXT,__text,regular,pure_instructions")?;
+            }
+            for function in &program.functions {
+                self.stack_offset = 0;
+                self.write_function(out, function)?;
+            }
+            if cfg!(target_os = "linux") {
+                writeln!(out, "\t.section\t.note.GNU-stack,\"\",@progbits")?;
             }
         }
         Ok(())
@@ -58,7 +56,7 @@ impl AsmGenerator {
             Instruction::Mov { src, dst } => self.write_mov(out, src, dst)?,
             Instruction::Ret => writeln!(out, "\tmovq\t%rbp, %rsp\n\tpopq\t%rbp\n\tret")?,
             Instruction::Unary { op, operand } => {
-                let operand = self.operand_str(&operand.clone());
+                let operand = self.operand_str(operand);
                 writeln!(out, "\t{} {}", self.unary_opcode(op), operand)?;
             }
             Instruction::Allocate { size } => {
@@ -93,6 +91,26 @@ impl AsmGenerator {
             }
             Instruction::Label { identifier } => {
                 writeln!(out, "{}:", self.format_label(identifier))?
+            }
+            Instruction::Deallocate { size } => {
+                writeln!(out, "\taddq\t${}, %rsp", size)?;
+                self.stack_offset -= *size as i64;
+            }
+            Instruction::Push { operand } => {
+                let operand_str = match operand {
+                        Operand::Reg(r) => self.reg_str_64(r),
+                        _ => self.operand_str(operand),
+                    };
+                    writeln!(out, "\tpushq\t{}", operand_str)?;
+                    self.stack_offset += 8;
+            }
+            Instruction::Call { name } => {
+                let call_name = if cfg!(target_os = "macos") {
+                    format!("_{}", name)
+                } else {
+                    name.clone()
+                };
+                writeln!(out, "\tcall\t{}", call_name)?;
             }
         }
         Ok(())
@@ -139,7 +157,7 @@ impl AsmGenerator {
     fn write_mul(&mut self, out: &mut dyn Write, src: &Operand, dst: &Operand) -> Result<()> {
         let src_op = self.move_to_register_if_necessary(out, src, dst)?;
         match dst {
-            Operand::Stack(_) | Operand::Pseudo(_) => writeln!(
+            Operand::Stack(_) => writeln!(
                 out,
                 "\tmovl\t{}, %r11d\n\timull\t{}, %r11d\n\tmovl\t%r11d, {}",
                 self.operand_str(dst),
@@ -154,6 +172,7 @@ impl AsmGenerator {
             ),
         }
     }
+
     fn write_shift(
         &mut self,
         out: &mut dyn Write,
@@ -178,6 +197,7 @@ impl AsmGenerator {
             ),
         }
     }
+
     fn write_cmp(
         &mut self,
         out: &mut dyn Write,
@@ -186,11 +206,11 @@ impl AsmGenerator {
     ) -> Result<()> {
         match (operand1, operand2) {
             (Operand::Imn(_), Operand::Imn(_))
-            | (Operand::Stack(_) | Operand::Pseudo(_), Operand::Stack(_) | Operand::Pseudo(_)) => {
+            | (Operand::Stack(_), Operand::Stack(_)) => {
                 self.write_mov(out, operand2, &Operand::Reg(Register::R10))?;
                 writeln!(out, "\tcmpl\t{}, %r10d", self.operand_str(operand1))
             }
-            (Operand::Stack(_) | Operand::Pseudo(_), Operand::Reg(_))
+            (Operand::Stack(_), Operand::Reg(_))
             | (Operand::Imn(_), _)
             | (Operand::Reg(_), _) => {
                 writeln!(
@@ -206,6 +226,7 @@ impl AsmGenerator {
             }
         }
     }
+
     fn write_setcc(
         &mut self,
         out: &mut dyn Write,
@@ -266,29 +287,38 @@ impl AsmGenerator {
         }
     }
 
-    fn operand_str(&mut self, operand: &Operand) -> String {
+    fn operand_str(&self, operand: &Operand) -> String {
         match operand {
             Operand::Imn(val) => format!("${}", val),
             Operand::Reg(reg) => self.reg_str(reg),
-            Operand::Pseudo(name) => {
-                let offset = match self.vars.get(name) {
-                    Some(&off) => off,
-                    None => {
-                        let new_off = self.vars.values().min().map_or(-4, |&min| min - 4);
-                        self.vars.insert(name.clone(), new_off);
-                        new_off
-                    }
-                };
-                format!("{}(%rbp)", offset)
-            }
             Operand::Stack(offset) => format!("{}(%rbp)", offset),
+            Operand::Pseudo(_) => {
+                panic!("Pseudoregisters should have been replaced before code generation")
+            }
         }
     }
-
+    fn reg_str_64(&self, reg: &Register) -> String {
+        match reg {
+            Register::AX => "%rax".to_string(),
+            Register::DX => "%rdx".to_string(),
+            Register::CX => "%rcx".to_string(),
+            Register::DI => "%rdi".to_string(),
+            Register::SI => "%rsi".to_string(),
+            Register::R8 => "%r8".to_string(),
+            Register::R9 => "%r9".to_string(),
+            Register::R10 => "%r10".to_string(),
+            Register::R11 => "%r11".to_string(),
+        }
+    }
     fn reg_str(&self, reg: &Register) -> String {
         match reg {
             Register::AX => "%eax".to_string(),
             Register::DX => "%edx".to_string(),
+            Register::CX => "%ecx".to_string(),
+            Register::DI => "%edi".to_string(),
+            Register::SI => "%esi".to_string(),
+            Register::R8 => "%r8d".to_string(),
+            Register::R9 => "%r9d".to_string(),
             Register::R10 => "%r10d".to_string(),
             Register::R11 => "%r11d".to_string(),
         }
@@ -298,6 +328,11 @@ impl AsmGenerator {
         match reg {
             Register::AX => "%al",
             Register::DX => "%dl",
+            Register::CX => "%cl",
+            Register::DI => "%dil",
+            Register::SI => "%sil",
+            Register::R8 => "%r8b",
+            Register::R9 => "%r9b",
             Register::R10 => "%r10b",
             Register::R11 => "%r11b",
         }
@@ -322,7 +357,14 @@ impl AsmGenerator {
             BinaryOpcode::Shr => "shrl",
         }
     }
+
     fn format_label(&self, identifier: &str) -> String {
         format!("L{}", identifier)
+    }
+}
+
+impl Default for AsmGenerator {
+    fn default() -> Self {
+        Self::new()
     }
 }

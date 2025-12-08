@@ -100,7 +100,7 @@ pub enum TokenType {
     Default,
     Comma,
     Static,
-    Extern
+    Extern,
 }
 
 #[derive(Clone, Debug, PartialEq)]

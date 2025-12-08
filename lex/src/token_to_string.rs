@@ -62,8 +62,8 @@ impl fmt::Display for Token {
             Token::Case(_) => write!(f, "case"),
             Token::Default(_) => write!(f, "default"),
             Token::Comma(_) => write!(f, ","),
-            Token::Static(_)=> write!(f, "static"),
-            Token::Extern(_)=> write!(f, "extern"),
+            Token::Static(_) => write!(f, "static"),
+            Token::Extern(_) => write!(f, "extern"),
         }
     }
 }

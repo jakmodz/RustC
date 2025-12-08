@@ -62,7 +62,7 @@ impl ParseExpr for Parser {
                     var: Box::new(left),
                     expr: Box::new(self.parse_expression(op_precedence)?),
                 };
-            }else if next_token.get_token_type() == TokenType::QuestionMark {
+            } else if next_token.get_token_type() == TokenType::QuestionMark {
                 let middle = self.parse_middle()?;
                 let right = self.parse_expression(next_token.get_precedence())?;
                 left = Expression::Conditional {

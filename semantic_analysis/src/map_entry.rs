@@ -1,7 +1,7 @@
 #[derive(Clone)]
 pub enum SymbolKind {
     Var,
-    Fun
+    Fun,
 }
 
 #[derive(Clone)]
@@ -13,7 +13,12 @@ pub(crate) struct VariableEntry {
 }
 
 impl VariableEntry {
-    pub fn new(name: String, from_current_block: bool,kind : SymbolKind,has_linkage:bool) -> Self {
+    pub fn new(
+        name: String,
+        from_current_block: bool,
+        kind: SymbolKind,
+        has_linkage: bool,
+    ) -> Self {
         Self {
             name,
             has_linkage,

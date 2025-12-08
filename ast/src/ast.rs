@@ -9,10 +9,10 @@ pub enum Annotation {
 
 #[derive(Debug, Clone)]
 pub struct Program {
-    pub functions: Vec<FuncDecl>
+    pub functions: Vec<FuncDecl>,
 }
 
-#[derive(Debug, Clone,PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FuncDecl {
     pub name: String,
     pub params: Vec<String>,

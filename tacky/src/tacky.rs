@@ -8,7 +8,7 @@ pub struct TackyFunction {
     pub params: Vec<Val>,
     pub body: Vec<TackyInstruction>,
 }
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum TackyInstruction {
     Return(Val),
     Unary {
@@ -37,10 +37,10 @@ pub enum TackyInstruction {
         cond: Val,
         target: String,
     },
-    FnCall{
+    FnCall {
         fn_name: String,
         args: Vec<Val>,
-        dst: Val
+        dst: Val,
     },
     Label(String),
 }

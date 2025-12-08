@@ -1,10 +1,10 @@
 use crate::asm_ast::*;
+use lazy_static::lazy_static;
 use tacky::tacky::{BinaryOp, Val};
 use tacky::tacky::{TackyInstruction, UnaryOp};
-use lazy_static::lazy_static;
 
-lazy_static!{
-    pub static ref REGISTER_FOR_CALLING: [Register;6]=[
+lazy_static! {
+    pub static ref REGISTER_FOR_CALLING: [Register; 6] = [
         Register::DI,
         Register::SI,
         Register::DX,
@@ -26,10 +26,9 @@ impl AsmParser {
 
         for func in program.functions.iter() {
             let mut instructions = Vec::new();
-            
+
             for (i, param) in func.params.iter().enumerate() {
                 if i < 6 {
-                    
                     let reg = REGISTER_FOR_CALLING[i].clone();
                     instructions.push(Instruction::Mov {
                         src: Operand::Reg(reg),
@@ -50,8 +49,8 @@ impl AsmParser {
                 name: func.name.clone(),
                 instructions,
             });
-        }    
-            
+        }
+
         AsmProgram { functions }
     }
 
@@ -187,30 +186,26 @@ impl AsmParser {
                 src: self.convert_val(src),
                 dst: self.convert_val(dst),
             }),
-            TackyInstruction::FnCall { fn_name, args, dst }=>{
+            TackyInstruction::FnCall { fn_name, args, dst } => {
                 let reg_args_count = args.len().min(6);
                 let stack_args_count = if args.len() > 6 { args.len() - 6 } else { 0 };
-                let stack_padding = if stack_args_count % 2  == 1{
-                    8
-                } else {
-                    0
-                };
-                if stack_padding != 0{
-                    instructions.push(Instruction::Allocate { size:stack_padding });
+                let stack_padding = if stack_args_count % 2 == 1 { 8 } else { 0 };
+                if stack_padding != 0 {
+                    instructions.push(Instruction::Allocate {
+                        size: stack_padding,
+                    });
                 }
-                for (i,item) in args.iter().take(reg_args_count).enumerate() {
+                for (i, item) in args.iter().take(reg_args_count).enumerate() {
                     let r = REGISTER_FOR_CALLING[i].clone();
                     let asm_arg = self.convert_val(item.clone());
-                    instructions.push(
-                        Instruction::Mov { 
-                            src: asm_arg, 
-                            dst: Operand::Reg(r) 
-                        }
-                    );
+                    instructions.push(Instruction::Mov {
+                        src: asm_arg,
+                        dst: Operand::Reg(r),
+                    });
                 }
                 for item in args.iter().skip(6).rev() {
                     let asm_arg = self.convert_val(item.clone());
-                    
+
                     instructions.push(Instruction::Mov {
                         src: asm_arg,
                         dst: Operand::Reg(Register::R10),
@@ -220,14 +215,16 @@ impl AsmParser {
                     });
                 }
                 instructions.push(Instruction::Call { name: fn_name });
-                let bytes_to_remove = 8 * stack_args_count +stack_padding;
+                let bytes_to_remove = 8 * stack_args_count + stack_padding;
                 if bytes_to_remove != 0 {
-                    instructions.push(Instruction::Deallocate { size: bytes_to_remove });
+                    instructions.push(Instruction::Deallocate {
+                        size: bytes_to_remove,
+                    });
                 }
                 let asm_dst = self.convert_val(dst);
-                instructions.push(Instruction::Mov { 
+                instructions.push(Instruction::Mov {
                     src: Operand::Reg(Register::AX),
-                    dst:asm_dst 
+                    dst: asm_dst,
                 });
             }
         }

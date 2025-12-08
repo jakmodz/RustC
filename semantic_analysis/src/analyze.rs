@@ -1,3 +1,4 @@
+use crate::GotoAnalyze;
 use crate::SemanticError;
 use crate::map_entry::SymbolKind;
 use crate::map_entry::VariableEntry;
@@ -11,12 +12,11 @@ use ast::ast::BlockElement;
 use ast::ast::Program;
 use ast::ast::*;
 use std::collections::{HashMap, HashSet};
-use crate::GotoAnalyze;
 
 pub struct SemanticAnalyzer {
     pub(crate) variables: HashMap<String, VariableEntry>,
     pub(crate) labels: HashSet<String>,
-    pub(crate) symbol_table: HashMap<String,SymbolEntry>,
+    pub(crate) symbol_table: HashMap<String, SymbolEntry>,
     pub var_count: usize,
     pub(crate) loop_count: usize,
     pub(crate) switch_count: usize,
@@ -66,18 +66,18 @@ impl SemanticAnalyzer {
 
     pub fn variable_resolution(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
         for func in ast.functions.iter_mut() {
-                let resolved = self.resolve_function_declaration(&func.clone())?;
-                if let Declaration::FuncDecl { decl: new_func } = resolved {
-                    *func = new_func;
-                }
+            let resolved = self.resolve_function_declaration(&func.clone())?;
+            if let Declaration::FuncDecl { decl: new_func } = resolved {
+                *func = new_func;
             }
+        }
         Ok(())
     }
     fn resolve_declaration(&mut self, decl: &Declaration) -> Result<Declaration, SemanticError> {
         match decl {
             Declaration::DefineVar(var) => {
-                let mut self_variables =   self.variables.clone();
-                let unique_name = self.insert_variable(&var.name,&mut self_variables)?;
+                let mut self_variables = self.variables.clone();
+                let unique_name = self.insert_variable(&var.name, &mut self_variables)?;
 
                 self.variables = self_variables;
                 let resolved_init = match var.init.as_ref() {
@@ -85,12 +85,12 @@ impl SemanticAnalyzer {
                     None => None,
                 };
 
-                Ok(Declaration::DefineVar (VariableDecl { 
-                    name: unique_name, 
-                    init:resolved_init }
-                ))
+                Ok(Declaration::DefineVar(VariableDecl {
+                    name: unique_name,
+                    init: resolved_init,
+                }))
             }
-            Declaration::FuncDecl { decl: declaration }=>{
+            Declaration::FuncDecl { decl: declaration } => {
                 Ok(self.resolve_function_declaration(declaration)?)
             }
         }
@@ -303,15 +303,15 @@ impl SemanticAnalyzer {
                     for arg in args.iter() {
                         resolved_args.push(self.resolve_expression(arg)?);
                     }
-                    
+
                     return Ok(Expression::FunctionCall {
                         func_name: new_name,
                         args: resolved_args,
                     });
                 }
-                Err(
-                    SemanticError::UndeclaredFunction { func_name: func_name.clone() }
-                )
+                Err(SemanticError::UndeclaredFunction {
+                    func_name: func_name.clone(),
+                })
             }
             _ => Ok(expression.clone()),
         }
@@ -320,16 +320,16 @@ impl SemanticAnalyzer {
     fn resolve_for_init(&mut self, init: &ForInit) -> Result<ForInit, SemanticError> {
         match init {
             ForInit::Declaration(decl) => {
-                let decl = Declaration::DefineVar(decl.clone()); 
+                let decl = Declaration::DefineVar(decl.clone());
                 let res = self.resolve_declaration(&decl)?;
                 Ok(ForInit::Declaration(
                     if let Declaration::DefineVar(var_decl) = res {
                         var_decl
                     } else {
                         unreachable!()
-                    }
+                    },
                 ))
-            },
+            }
             ForInit::Expression(expr_opt) => {
                 let resolved_expr_opt = match expr_opt {
                     Some(expr) => Some(self.resolve_expression(expr)?),
@@ -349,9 +349,11 @@ impl SemanticAnalyzer {
             None => Ok(None),
         }
     }
-    fn resolve_function_declaration(&mut self, decl: &FuncDecl) -> Result<Declaration, SemanticError> {
+    fn resolve_function_declaration(
+        &mut self,
+        decl: &FuncDecl,
+    ) -> Result<Declaration, SemanticError> {
         if let Some(prev) = self.variables.get(&decl.name) {
-            
             if prev.from_current_block && !prev.has_linkage {
                 return Err(SemanticError::MultipleDeclaration {
                     var_name: decl.name.clone(),
@@ -360,38 +362,33 @@ impl SemanticAnalyzer {
         }
         self.variables.insert(
             decl.name.clone(),
-            VariableEntry::new(
-                decl.name.clone(),
-                true,
-                SymbolKind::Fun,
-                true,
-            ),
+            VariableEntry::new(decl.name.clone(), true, SymbolKind::Fun, true),
         );
-    
+
         let mut inner_map = self.variables.clone();
-        
+
         for entry in inner_map.values_mut() {
             entry.from_current_block = false;
         }
-    
+
         let mut resolved_params = Vec::new();
         for param in decl.params.iter() {
             let unique = self.insert_variable(param, &mut inner_map)?;
             resolved_params.push(unique);
         }
-        
+
         let resolved_body = if let Some(body) = &decl.body {
             let saved_scope = std::mem::replace(&mut self.variables, inner_map);
-            
+
             let resolved_elements = self.resolve_block(&body.elements)?;
-            
-            let _ =std::mem::replace(&mut self.variables, saved_scope);
-            
+
+            let _ = std::mem::replace(&mut self.variables, saved_scope);
+
             Some(Block::new(resolved_elements))
         } else {
             None
         };
-    
+
         Ok(Declaration::FuncDecl {
             decl: FuncDecl {
                 name: decl.name.clone(),
@@ -400,12 +397,15 @@ impl SemanticAnalyzer {
             },
         })
     }
-    fn get_resolved_function_name(&mut self,name:&String)->Result<String,SemanticError>{
-
+    fn get_resolved_function_name(&mut self, name: &String) -> Result<String, SemanticError> {
         Ok(name.clone())
     }
-    fn insert_variable(&mut self,var:&String,map:&mut HashMap<String, VariableEntry>)->Result<String,SemanticError>{
-        if let Some(entry) =map.get(var) {
+    fn insert_variable(
+        &mut self,
+        var: &String,
+        map: &mut HashMap<String, VariableEntry>,
+    ) -> Result<String, SemanticError> {
+        if let Some(entry) = map.get(var) {
             if entry.from_current_block {
                 return Err(SemanticError::MultipleDeclaration {
                     var_name: var.clone(),
@@ -418,8 +418,7 @@ impl SemanticAnalyzer {
 
         map.insert(
             var.clone(),
-            VariableEntry::new(unique_name.clone(), true
-                ,SymbolKind::Var,false),
+            VariableEntry::new(unique_name.clone(), true, SymbolKind::Var, false),
         );
         Ok(unique_name)
     }

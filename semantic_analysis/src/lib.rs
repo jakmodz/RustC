@@ -1,13 +1,13 @@
 mod analyze;
+mod goto_analyze;
 mod map_entry;
 mod semantic_error;
-mod goto_analyze;
-mod type_checker;
-mod symbol_entry;
 pub mod switch_analyze;
+mod symbol_entry;
+mod type_checker;
 
-pub(crate) use goto_analyze::GotoAnalyze;
 pub use analyze::SemanticAnalyzer;
+pub(crate) use goto_analyze::GotoAnalyze;
 pub use semantic_error::SemanticError;
 #[cfg(test)]
 mod tests {

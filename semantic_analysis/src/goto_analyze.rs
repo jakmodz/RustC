@@ -1,11 +1,11 @@
-
 use std::{iter::Peekable, slice::Iter};
 
-use ast::{Stmt, ast::{BlockElement, Program}};
+use ast::{
+    Stmt,
+    ast::{BlockElement, Program},
+};
 
 use crate::{SemanticAnalyzer, SemanticError};
-
-
 
 pub trait GotoAnalyze {
     fn analyze_goto_statements(&mut self, ast: &mut Program) -> Result<(), SemanticError>;
@@ -32,7 +32,7 @@ impl GotoAnalyze for SemanticAnalyzer {
                         self.resolve_goto(stmt)?;
                     }
                 }
-            } 
+            }
         }
         Ok(())
     }

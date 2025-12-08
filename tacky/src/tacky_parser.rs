@@ -30,8 +30,7 @@ impl TackyParser {
         s
     }
 
-    pub fn emit_tacky(&mut self,mut ast: Program) -> tacky::Program {
-        
+    pub fn emit_tacky(&mut self, mut ast: Program) -> tacky::Program {
         let mut functions = Vec::new();
         for func in ast.functions.iter_mut() {
             let mut body = Vec::new();
@@ -41,7 +40,7 @@ impl TackyParser {
                 for param in &func.params {
                     params.push(Val::Var(param.clone()));
                 }
-            
+
                 InstructionBuilder::new(&mut body).return_val(Constant(0));
                 functions.push(tacky::TackyFunction {
                     name: func.name.clone(),
@@ -50,7 +49,6 @@ impl TackyParser {
                 });
             }
         }
-        
 
         tacky::Program {
             functions: functions,
@@ -88,15 +86,13 @@ impl TackyParser {
         body: &mut Vec<tacky::TackyInstruction>,
     ) {
         match decl {
-            Declaration::DefineVar (var) => {
+            Declaration::DefineVar(var) => {
                 if let Some(init_expr) = var.init {
                     let val = self.convert_expr(init_expr, body);
                     InstructionBuilder::new(body).copy(val, Val::Var(var.name));
                 }
             }
-            _=>{
-                
-            }
+            _ => {}
         }
     }
 
@@ -107,7 +103,7 @@ impl TackyParser {
     ) {
         match init {
             ForInit::Declaration(decl) => {
-                self.convert_declaration(Declaration::DefineVar(decl),instructions);
+                self.convert_declaration(Declaration::DefineVar(decl), instructions);
             }
             ForInit::Expression(expr) => {
                 if let Some(expr) = expr {

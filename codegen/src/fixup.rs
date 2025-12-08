@@ -21,20 +21,13 @@ impl InstructionFixup {
     }
 
     fn fixup_function(&self, mut function: AsmFunction) -> AsmFunction {
-        let stack_size = self
-            .stack_sizes
-            .get(&function.name)
-            .copied()
-            .unwrap_or(0);
+        let stack_size = self.stack_sizes.get(&function.name).copied().unwrap_or(0);
         let aligned_size = round_up_to_16(stack_size);
 
         if aligned_size > 0 {
-            function.instructions.insert(
-                0,
-                Instruction::Allocate {
-                    size: aligned_size,
-                },
-            );
+            function
+                .instructions
+                .insert(0, Instruction::Allocate { size: aligned_size });
         }
 
         function

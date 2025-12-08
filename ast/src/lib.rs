@@ -1,19 +1,17 @@
 pub mod ast;
-pub mod parser;
-pub mod parser_error;
-mod expr;
-mod stmt;
 mod decl;
+mod expr;
 mod parse_expr;
 mod parse_stmt;
+pub mod parser;
+pub mod parser_error;
+mod stmt;
 mod var_type;
 
-
-
-pub(crate) use parse_expr::ParseExpr;
-pub(crate) use parse_stmt::ParseStmt;
 pub use decl::Declaration;
 pub use expr::Expression;
+pub(crate) use parse_expr::ParseExpr;
+pub(crate) use parse_stmt::ParseStmt;
 pub use stmt::Stmt;
 pub use var_type::VarType;
 #[cfg(test)]

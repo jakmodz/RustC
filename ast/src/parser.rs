@@ -1,9 +1,9 @@
-use crate::{Declaration, Expression, ast::*};
-use crate::parser_error::ParserError;
-use lex::token;
-use lex::token::{Token, TokenType};
 use crate::ParseExpr;
 use crate::ParseStmt;
+use crate::parser_error::ParserError;
+use crate::{Declaration, Expression, ast::*};
+use lex::token;
+use lex::token::{Token, TokenType};
 
 pub struct Parser {
     pub(crate) tokens: Vec<token::Token>,
@@ -39,7 +39,7 @@ impl Parser {
         let current_token = &self.tokens[self.pos];
         Ok(current_token.clone())
     }
-    
+
     pub(crate) fn peek_next(&mut self) -> Result<Token, ParserError> {
         if self.pos + 1 >= self.tokens.len() {
             return Err(ParserError::UnexpectedEOF);
@@ -47,7 +47,7 @@ impl Parser {
         let next_token = &self.tokens[self.pos + 1];
         Ok(next_token.clone())
     }
-    
+
     pub(crate) fn eat(&mut self) -> Result<Token, ParserError> {
         if self.pos >= self.tokens.len() {
             return Err(ParserError::UnexpectedEOF);
@@ -59,24 +59,24 @@ impl Parser {
 
     pub fn parse(&mut self) -> Result<Program, ParserError> {
         let mut functions = Vec::new();
-        
+
         while self.pos < self.tokens.len() {
             let func_decl = self.parse_function()?;
             functions.push(func_decl);
         }
-        
+
         Ok(Program { functions })
     }
 
     fn parse_function(&mut self) -> Result<FuncDecl, ParserError> {
         self.excepted_token(TokenType::Int)?;
-        
+
         let token = self.excepted_token(TokenType::Identifier)?;
         let name = token.to_string();
-        
+
         self.excepted_token(TokenType::OpenParen)?;
         let mut params = Vec::new();
-        
+
         if self.peek()?.get_token_type() != TokenType::CloseParen {
             if self.peek()?.get_token_type() == TokenType::Void {
                 self.eat()?;
@@ -86,7 +86,7 @@ impl Parser {
                     let param_name_token = self.excepted_token(TokenType::Identifier)?;
                     let param_name = param_name_token.to_string();
                     params.push(param_name);
-                    
+
                     if self.peek()?.get_token_type() == TokenType::Comma {
                         self.eat()?;
                     } else {
@@ -95,9 +95,9 @@ impl Parser {
                 }
             }
         }
-        
+
         self.excepted_token(TokenType::CloseParen)?;
-        
+
         let next_token = self.peek()?;
         if next_token.get_token_type() == TokenType::Semicolon {
             self.eat()?;
@@ -107,17 +107,16 @@ impl Parser {
                 body: None,
             })
         } else if next_token.get_token_type() == TokenType::OpenBrace {
-            
             self.eat()?;
             let mut function_body = Vec::new();
-            
+
             while self.peek()?.get_token_type() != TokenType::CloseBrace {
                 let block_item = self.parse_block_element()?;
                 function_body.push(block_item);
             }
-            
+
             self.excepted_token(TokenType::CloseBrace)?;
-            
+
             Ok(FuncDecl {
                 name,
                 params,
@@ -150,7 +149,7 @@ impl Parser {
     fn parse_declaration(&mut self) -> Result<Declaration, ParserError> {
         self.excepted_token(TokenType::Int)?;
         let var_name_token = self.eat()?;
-        
+
         if var_name_token.get_token_type() != TokenType::Identifier {
             return Err(ParserError::ExpectedToken(
                 var_name_token.span().line,
@@ -159,16 +158,16 @@ impl Parser {
                 format!("{:?}", var_name_token.get_token_type()),
             ));
         }
-        
+
         let name = match var_name_token {
             Token::Identifier(name, _span) => name,
             _ => unreachable!(),
         };
-        
+
         if self.peek()?.get_token_type() == TokenType::OpenParen {
             self.eat()?;
             let mut params = Vec::new();
-            
+
             if self.peek()?.get_token_type() != TokenType::CloseParen {
                 if self.peek()?.get_token_type() == TokenType::Void {
                     self.eat()?;
@@ -178,7 +177,7 @@ impl Parser {
                         let param_name_token = self.excepted_token(TokenType::Identifier)?;
                         let param_name = param_name_token.to_string();
                         params.push(param_name);
-                        
+
                         if self.peek()?.get_token_type() == TokenType::Comma {
                             self.eat()?;
                         } else {
@@ -187,58 +186,57 @@ impl Parser {
                     }
                 }
             }
-            
+
             self.excepted_token(TokenType::CloseParen)?;
-            
+
             if self.peek()?.get_token_type() == TokenType::OpenBrace {
                 self.eat()?;
                 let mut function_body = Vec::new();
-                
+
                 while self.peek()?.get_token_type() != TokenType::CloseBrace {
                     let block_item = self.parse_block_element()?;
                     function_body.push(block_item);
                 }
-                
+
                 self.excepted_token(TokenType::CloseBrace)?;
-                
+
                 Ok(Declaration::FuncDecl {
                     decl: FuncDecl {
                         name,
                         params,
                         body: Some(Block::new(function_body)),
-                    }
+                    },
                 })
             } else {
                 self.excepted_token(TokenType::Semicolon)?;
-                
+
                 Ok(Declaration::FuncDecl {
                     decl: FuncDecl {
                         name,
                         params,
                         body: None,
-                    }
+                    },
                 })
             }
         } else {
-            
             let mut initializer: Option<Expression> = None;
             let next_token = self.peek()?;
-            
+
             if next_token.get_token_type() == TokenType::Equal {
                 self.eat()?;
                 let expr = self.parse_expression(0)?;
                 initializer = Some(expr);
             }
-            
+
             self.excepted_token(TokenType::Semicolon)?;
-            
+
             Ok(Declaration::DefineVar(VariableDecl {
                 name,
                 init: initializer,
             }))
         }
     }
-    
+
     pub(crate) fn parse_for_init(&mut self) -> Result<ForInit, ParserError> {
         let next_token = self.peek()?;
         match next_token.get_token_type() {

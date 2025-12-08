@@ -50,14 +50,14 @@ pub enum Instruction {
     Allocate {
         size: usize,
     },
-    Deallocate{
-        size:usize
+    Deallocate {
+        size: usize,
     },
-    Push{
-        operand: Operand
+    Push {
+        operand: Operand,
     },
-    Call{
-        name:String
+    Call {
+        name: String,
     },
     Ret,
 }

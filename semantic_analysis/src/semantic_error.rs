@@ -34,20 +34,25 @@ pub enum SemanticError {
     DuplicateCase(i64),
     #[error("Multiple default labels in switch statement")]
     MultipleDefaults,
-    
+
     #[error("Undeclared function '{func_name}'")]
     UndeclaredFunction { func_name: String },
-    
-    
+
     #[error("Function '{func_name}' is defined more than once")]
     DuplicateFunctionDefinition { func_name: String },
     #[error("Incomplete function declaration for '{func_name}'")]
     IncompleteFunctionDeclaration { func_name: String },
-    
+
     #[error("Variable '{var_name}' used as function name")]
-    VariableAsFunctionName{var_name: String},
-    #[error("Function '{func_name}' called with wrong number of arguments. Excepted: {excepted} got: {got}")]
-    WrongNumberOfArguments {func_name: String, excepted: usize, got: usize},
+    VariableAsFunctionName { var_name: String },
+    #[error(
+        "Function '{func_name}' called with wrong number of arguments. Excepted: {excepted} got: {got}"
+    )]
+    WrongNumberOfArguments {
+        func_name: String,
+        excepted: usize,
+        got: usize,
+    },
     #[error("Function '{func_name}' used as var name")]
-    FunctionAsVariableName{func_name: String},
+    FunctionAsVariableName { func_name: String },
 }

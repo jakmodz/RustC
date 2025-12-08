@@ -20,7 +20,6 @@ impl AsmGenerator {
     }
 
     pub fn write(&mut self, program: AsmProgram, mut outputs: Vec<Box<dyn Write>>) -> Result<()> {
-        
         for out in outputs.iter_mut() {
             if cfg!(target_os = "macos") {
                 writeln!(out, "\t.section\t__TEXT,__text,regular,pure_instructions")?;
@@ -98,11 +97,11 @@ impl AsmGenerator {
             }
             Instruction::Push { operand } => {
                 let operand_str = match operand {
-                        Operand::Reg(r) => self.reg_str_64(r),
-                        _ => self.operand_str(operand),
-                    };
-                    writeln!(out, "\tpushq\t{}", operand_str)?;
-                    self.stack_offset += 8;
+                    Operand::Reg(r) => self.reg_str_64(r),
+                    _ => self.operand_str(operand),
+                };
+                writeln!(out, "\tpushq\t{}", operand_str)?;
+                self.stack_offset += 8;
             }
             Instruction::Call { name } => {
                 let call_name = if cfg!(target_os = "macos") {
@@ -205,14 +204,11 @@ impl AsmGenerator {
         operand2: &Operand,
     ) -> Result<()> {
         match (operand1, operand2) {
-            (Operand::Imn(_), Operand::Imn(_))
-            | (Operand::Stack(_), Operand::Stack(_)) => {
+            (Operand::Imn(_), Operand::Imn(_)) | (Operand::Stack(_), Operand::Stack(_)) => {
                 self.write_mov(out, operand2, &Operand::Reg(Register::R10))?;
                 writeln!(out, "\tcmpl\t{}, %r10d", self.operand_str(operand1))
             }
-            (Operand::Stack(_), Operand::Reg(_))
-            | (Operand::Imn(_), _)
-            | (Operand::Reg(_), _) => {
+            (Operand::Stack(_), Operand::Reg(_)) | (Operand::Imn(_), _) | (Operand::Reg(_), _) => {
                 writeln!(
                     out,
                     "\tcmpl\t{}, {}",

@@ -99,6 +99,8 @@ pub enum TokenType {
     Case,
     Default,
     Comma,
+    Static,
+    Extern
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -168,7 +170,11 @@ pub enum Token {
     Case(Span),
     Default(Span),
     Comma(Span),
+    Static(Span),
+    Extern(Span),
 }
+
+impl Token {}
 
 impl Token {
     pub fn get_token_type(&self) -> TokenType {
@@ -230,6 +236,8 @@ impl Token {
             Token::Case(_) => TokenType::Case,
             Token::Default(_) => TokenType::Default,
             Token::Comma(_) => TokenType::Comma,
+            Token::Static(_) => TokenType::Static,
+            Token::Extern(_) => TokenType::Extern,
         }
     }
 
@@ -291,6 +299,8 @@ impl Token {
             | Token::Case(span)
             | Token::Default(span)
             | Token::Comma(span)
+            | Token::Static(span)
+            | Token::Extern(span)
             | Token::Goto(span) => span,
         }
     }
@@ -351,6 +361,8 @@ impl Token {
             "case" => Some(TokenType::Case),
             "default" => Some(TokenType::Default),
             "," => Some(TokenType::Comma),
+            "static" => Some(TokenType::Static),
+            "extern" => Some(TokenType::Extern),
             _ => None,
         }
     }
@@ -413,6 +425,8 @@ impl Token {
             TokenType::Case => Token::Case(span),
             TokenType::Default => Token::Default(span),
             TokenType::Comma => Token::Comma(span),
+            TokenType::Static => Token::Static(span),
+            TokenType::Extern => Token::Extern(span),
         }
     }
     pub fn is_binary_op(&self) -> bool {

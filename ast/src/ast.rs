@@ -1,5 +1,5 @@
-use crate::{Declaration, Expression, Stmt};
 use crate::decl::StorageClass;
+use crate::{Declaration, Expression, Stmt};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Annotation {
@@ -18,7 +18,7 @@ pub struct FuncDecl {
     pub name: String,
     pub params: Vec<String>,
     pub body: Option<Block>,
-    pub storage_class: Option<StorageClass>
+    pub storage_class: Option<StorageClass>,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum BlockElement {
@@ -43,7 +43,7 @@ pub enum ForInit {
 pub struct VariableDecl {
     pub name: String,
     pub init: Option<Expression>,
-    pub storage_class: Option<StorageClass>
+    pub storage_class: Option<StorageClass>,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub struct SwitchCase {

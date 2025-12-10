@@ -1,6 +1,6 @@
 use crate::convert_expr::*;
 use crate::instruction_builder::InstructionBuilder;
-use crate::tacky::{BinaryOp,Val};
+use crate::tacky::{BinaryOp, Val};
 use crate::tacky_instruction::TackyInstruction;
 use crate::tacky_parser::TackyParser;
 use ast::ast::{Annotation, BlockElement, ForInit, SwitchCase};

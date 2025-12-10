@@ -17,7 +17,7 @@ impl AsmGenerator {
                     AsmConstruct::Func(function) => {
                         self.stack_offset = 0;
                         self.write_function(out, function)?;
-                    },
+                    }
                     AsmConstruct::StaticVar(static_var) => {
                         self.write_static_var(out, static_var)?;
                     }
@@ -34,28 +34,27 @@ impl AsmGenerator {
         let name = if static_var.global && cfg!(target_os = "macos") {
             format!("_{}", static_var.name)
         } else if !static_var.global {
-            format!("L_{}", static_var.name) 
-        }
-        else {
+            format!("L_{}", static_var.name)
+        } else {
             static_var.name.clone()
         };
-        
+
         if static_var.global {
             writeln!(out, "\t.globl {}", name)?;
         }
-        
+
         if !static_var.global && cfg!(target_os = "linux") {
-            writeln!(out, "\t.local {}", name)?; 
+            writeln!(out, "\t.local {}", name)?;
         }
 
         if static_var.init == 0 {
             writeln!(out, "\t.bss")?;
-        }else{
-             writeln!(out, "\t.data")?;
+        } else {
+            writeln!(out, "\t.data")?;
         }
-       writeln!(out, "\t.balign 4")?;
-        writeln!(out, "{}:", name)?; 
-        writeln!(out, "\t.long {}", static_var.init)?; 
+        writeln!(out, "\t.balign 4")?;
+        writeln!(out, "{}:", name)?;
+        writeln!(out, "\t.long {}", static_var.init)?;
 
         Ok(())
     }
@@ -65,10 +64,10 @@ impl AsmGenerator {
         if cfg!(target_os = "macos") {
             fn_name = format!("_{}", fn_name);
         }
-        writeln!(out,"\t.text")?; 
+        writeln!(out, "\t.text")?;
         if function.global {
-            writeln!(out,"\t.globl {}", fn_name)?; 
-        } 
+            writeln!(out, "\t.globl {}", fn_name)?;
+        }
         writeln!(out, "{}:", fn_name)?;
         writeln!(out, "\tpushq\t%rbp\n\tmovq\t%rsp, %rbp")?;
 
@@ -282,9 +281,9 @@ impl AsmGenerator {
             Operand::Pseudo(_) => {
                 panic!("Pseudoregisters should have been replaced before code generation")
             }
-            Operand::Data(iden) =>{
-                format!("{}(%rip)",iden) 
-            },
+            Operand::Data(iden) => {
+                format!("{}(%rip)", iden)
+            }
         }
     }
     fn reg_str_64(&self, reg: &Register) -> String {

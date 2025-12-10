@@ -1,29 +1,27 @@
 use crate::tacky_instruction::TackyInstruction;
 
-
-#[derive(Debug,Clone)]
-pub enum TopLevelConstruct{
+#[derive(Debug, Clone)]
+pub enum TopLevelConstruct {
     Function(TackyFunction),
-    StaticVar(StaticVar)
+    StaticVar(StaticVar),
 }
-
 
 #[derive(Debug)]
 pub struct Program {
     pub constructs: Vec<TopLevelConstruct>,
 }
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct TackyFunction {
     pub name: String,
     pub params: Vec<Val>,
     pub body: Vec<TackyInstruction>,
-    pub global:bool
+    pub global: bool,
 }
-#[derive(Debug,Clone)]
-pub struct StaticVar{
-    pub name:String,
-    pub global:bool,
-    pub init: i64
+#[derive(Debug, Clone)]
+pub struct StaticVar {
+    pub name: String,
+    pub global: bool,
+    pub init: i64,
 }
 
 #[derive(Clone, Debug, PartialEq)]

@@ -17,7 +17,8 @@ mod tests {
 
     #[test]
     fn test_asm_gen() -> std::io::Result<()> {
-        let source = String::from("
+        let source = String::from(
+            "
             /* A variable with internal linkage may be tentatively defined
              * and declared multiple times, but defined only once
              */
@@ -43,7 +44,7 @@ mod tests {
         let mut analyzer = SemanticAnalyzer::new();
         analyzer.analyze(&mut ast).unwrap();
         let tacky_program: tacky::tacky::Program =
-            TackyParser::new(analyzer.var_count).emit_tacky(ast,&analyzer);
+            TackyParser::new(analyzer.var_count).emit_tacky(ast, &analyzer);
 
         let asm_with_pseudos = AsmParser::new().parse(tacky_program);
 

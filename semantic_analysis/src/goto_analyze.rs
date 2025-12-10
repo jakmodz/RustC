@@ -21,7 +21,7 @@ impl GotoAnalyze for SemanticAnalyzer {
     fn analyze_goto_statements(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
         for func in ast.declarations.iter_mut() {
             match func {
-                ast::Declaration::FuncDecl { decl }=> {
+                ast::Declaration::FuncDecl { decl } => {
                     if let Some(body) = &mut decl.body {
                         let mut iter = body.elements.iter().peekable();
                         while let Some(element) = iter.next() {
@@ -36,7 +36,7 @@ impl GotoAnalyze for SemanticAnalyzer {
                         }
                     }
                 }
-                _=>{}
+                _ => {}
             }
         }
         Ok(())
@@ -76,16 +76,36 @@ impl GotoAnalyze for SemanticAnalyzer {
                 }
                 self.labels.insert(label.to_string());
             }
-            Stmt::While { condition, body, annotation } => todo!(),
-            Stmt::DoWhile { body, condition, annotation } => todo!(),
-            Stmt::For { init, condition, increment, body, annotation } => todo!(),
+            Stmt::While {
+                condition,
+                body,
+                annotation,
+            } => todo!(),
+            Stmt::DoWhile {
+                body,
+                condition,
+                annotation,
+            } => todo!(),
+            Stmt::For {
+                init,
+                condition,
+                increment,
+                body,
+                annotation,
+            } => todo!(),
             Stmt::Compound { block } => todo!(),
-            Stmt::Switch { expr, body, annotation, cases, default_label } => todo!(),
-            Stmt::Case { value, body } => {},
+            Stmt::Switch {
+                expr,
+                body,
+                annotation,
+                cases,
+                default_label,
+            } => todo!(),
+            Stmt::Case { value, body } => {}
             Stmt::Default { body } => {
                 self.resolve_goto(body)?;
-            },
-            _=>{}
+            }
+            _ => {}
         }
         Ok(())
     }

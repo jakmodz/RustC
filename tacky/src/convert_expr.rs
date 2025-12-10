@@ -1,7 +1,7 @@
 use crate::instruction_builder::InstructionBuilder;
 use crate::tacky;
 use crate::tacky::Val::Constant;
-use crate::tacky::{BinaryOp,  Val};
+use crate::tacky::{BinaryOp, Val};
 use crate::tacky_instruction::TackyInstruction;
 use crate::tacky_parser::TackyParser;
 

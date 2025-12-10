@@ -80,7 +80,7 @@ impl Parser {
                 _ => {}
             }
         }
-        
+
         let stmt = self.parse_stmt()?;
         Ok(BlockElement::Stmt(stmt))
     }
@@ -143,7 +143,7 @@ impl Parser {
 
     fn parse_declaration(&mut self) -> Result<Declaration, ParserError> {
         let storage_class = self.parse_type_and_storage_class()?;
-        
+
         let var_name_token = self.eat()?;
 
         if var_name_token.get_token_type() != TokenType::Identifier {
@@ -240,7 +240,7 @@ impl Parser {
         if self.pos >= self.tokens.len() {
             return Err(ParserError::UnexpectedEOF);
         }
-        
+
         let next_token = self.peek()?;
         match next_token.get_token_type() {
             TokenType::Int | TokenType::Static | TokenType::Extern => {

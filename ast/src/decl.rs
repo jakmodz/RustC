@@ -1,15 +1,13 @@
 use crate::ast::{FuncDecl, VariableDecl};
 
-
-
 #[derive(Debug, Clone, PartialEq)]
-pub enum StorageClass{
+pub enum StorageClass {
     Extern,
-    Static
+    Static,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Declaration {
     DefineVar(VariableDecl),
-    FuncDecl { decl: FuncDecl},
+    FuncDecl { decl: FuncDecl },
 }

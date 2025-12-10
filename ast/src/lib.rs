@@ -31,7 +31,7 @@ mod tests {
         println!("{:#?}", ast);
 
         assert_eq!(ast.declarations.len(), 1);
-        
+
         match &ast.declarations[0] {
             Declaration::FuncDecl { decl } => {
                 assert_eq!(decl.name, "main");
@@ -55,14 +55,14 @@ mod tests {
         let tokens = lexer.tokenize(source).unwrap();
         let mut parser = crate::parser::Parser::new(tokens);
         let ast = parser.parse().unwrap();
-        
+
         assert_eq!(ast.declarations.len(), 1);
-        
+
         match &ast.declarations[0] {
             Declaration::FuncDecl { decl } => {
                 assert_eq!(decl.name, "main");
                 assert!(decl.body.is_some());
-                
+
                 let body = decl.body.as_ref().unwrap();
                 assert_eq!(body.elements.len(), 3);
             }
@@ -83,12 +83,12 @@ label1:
         let tokens = lexer.tokenize(source).unwrap();
         let mut parser = crate::parser::Parser::new(tokens);
         let ast = parser.parse().unwrap();
-        
+
         match &ast.declarations[0] {
             Declaration::FuncDecl { decl } => {
                 assert_eq!(decl.name, "main");
                 assert!(decl.body.is_some());
-                
+
                 let body = decl.body.as_ref().unwrap();
                 assert_eq!(body.elements.len(), 3);
             }

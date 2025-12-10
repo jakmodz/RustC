@@ -32,7 +32,7 @@ impl InstructionFixup {
                 .instructions
                 .insert(0, Instruction::Allocate { size: aligned_size });
         }
-        
+
         let mut new_instructions = Vec::new();
         for instr in function.instructions.into_iter() {
             new_instructions.extend(Self::fixup_instruction(instr));
@@ -45,19 +45,19 @@ impl InstructionFixup {
     fn is_memory_operand(operand: &Operand) -> bool {
         matches!(operand, Operand::Stack(_) | Operand::Data(_))
     }
-    
+
     fn needs_rewrite(op1: &Operand, op2: &Operand) -> bool {
         let op1_is_mem = Self::is_memory_operand(op1);
         let op2_is_mem = Self::is_memory_operand(op2);
-        
+
         if op1_is_mem && op2_is_mem {
             return true;
         }
-        
+
         if matches!(op1, Operand::Imn(_)) && matches!(op2, Operand::Imn(_)) {
             return true;
         }
-        
+
         false
     }
 
@@ -66,19 +66,16 @@ impl InstructionFixup {
         match instr {
             Instruction::Mov { src, dst } => {
                 let is_reg_to_imm = matches!((&src, &dst), (Operand::Reg(_), Operand::Imn(_)));
-                
+
                 let needs_rewrite = Self::needs_rewrite(&src, &dst) || is_reg_to_imm;
-                
+
                 if needs_rewrite {
                     vec![
                         Instruction::Mov {
                             src,
                             dst: temp_reg.clone(),
                         },
-                        Instruction::Mov {
-                            src: temp_reg,
-                            dst,
-                        },
+                        Instruction::Mov { src: temp_reg, dst },
                     ]
                 } else {
                     vec![Instruction::Mov { src, dst }]

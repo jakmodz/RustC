@@ -399,7 +399,7 @@ impl TypeChecker for SemanticAnalyzer {
                         global_scope.insert(name.clone(), entry.clone());
                     }
                     SymbolEntry::Variable {
-                        attr: IdentifierAttr::StaticAttr {  .. },
+                        attr: IdentifierAttr::StaticAttr { .. },
                         ..
                     } => {
                         global_scope.insert(name.clone(), entry.clone());

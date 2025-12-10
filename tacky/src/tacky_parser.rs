@@ -1,13 +1,18 @@
-use crate::label_generator::LabelGenerator;
-use crate::tacky;
-use crate::tacky::Val::Constant;
-use crate::tacky::{BinaryOp, TackyInstruction, Val};
+use std::collections::HashMap;
 
+use crate::label_generator::LabelGenerator;
+use crate::tacky::{self, StaticVar, TackyFunction, TopLevelConstruct};
+use crate::tacky::Val::Constant;
+use crate::tacky::{BinaryOp, Val};
+use semantic_analysis::{SemanticAnalyzer, SymbolEntry};
+use semantic_analysis::symbol_entry::{IdentifierAttr, InitialValue};
 use crate::conver_stmt::StatementConverter;
 use crate::convert_expr::ExpressionConverter;
 use crate::instruction_builder::InstructionBuilder;
-use ast::ast::{Annotation, BlockElement, ForInit, Program};
+use crate::tacky_instruction::TackyInstruction;
+use ast::ast::{Annotation, Block, BlockElement, ForInit, Program};
 use ast::{Declaration, Expression};
+use ast::decl::StorageClass;
 
 pub struct TackyParser {
     pub var_counter: usize,
@@ -29,13 +34,43 @@ impl TackyParser {
         self.var_counter += 1;
         s
     }
-
-    pub fn emit_tacky(&mut self, mut ast: Program) -> tacky::Program {
-        todo!();
-        let mut functions = Vec::new();
+    fn convert_symbols(&mut self,symbols:&HashMap<String,SymbolEntry>)->Vec<TopLevelConstruct>{
+        let mut defs= Vec::new();
+        for (name,entry) in symbols{
+            match entry.get_attr(){
+                IdentifierAttr::StaticAttr { init_val, global } => {
+                    match init_val {
+                        InitialValue::Initial(val)=>{
+                            let var = StaticVar{
+                                name:name.clone(),
+                                global:global.clone(),
+                                init:val.clone()
+                            };
+                            defs.push(TopLevelConstruct::StaticVar(var))
+                        },
+                        InitialValue::Tentative=>{
+                            let var = StaticVar{
+                                name:name.clone(),
+                                global:global.clone(),
+                                init:0
+                            };
+                            defs.push(TopLevelConstruct::StaticVar(var))
+                        },
+                        InitialValue::NoInit=>{}
+                    }
+                },
+                _=>{}
+            }
+        }
+        defs
+    }
+    pub fn emit_tacky(&mut self, mut ast: Program,semantic_analyzer:&SemanticAnalyzer) -> tacky::Program {
+        let mut constructs = Vec::new();
+        constructs.append(&mut self.convert_symbols(&semantic_analyzer.symbol_table));
+        
         for declaration in ast.declarations.iter_mut() {
             match declaration {
-                Declaration::DefineVar(variable_decl) => {
+                Declaration::DefineVar(..) => {
                     
                 },
                 Declaration::FuncDecl { decl } =>{
@@ -46,28 +81,29 @@ impl TackyParser {
                         for param in &decl.params {
                             params.push(Val::Var(param.clone()));
                         }
-        
                         InstructionBuilder::new(&mut body).return_val(Constant(0));
-                        functions.push(tacky::TackyFunction {
+                        constructs.push(TopLevelConstruct::Function(TackyFunction {
                             name: decl.name.clone(),
                             params,
                             body: body,
-                        });
+                            global: match semantic_analyzer.symbol_table.get(&decl.name) {
+                                Some(entry) => entry.get_attr().is_global(),
+                                None => false,
+                            },
+                        }));
                     }
                 },
             }
-            
         }
-
         tacky::Program {
-            functions: functions,
+            constructs
         }
     }
 
     fn convert_block_element(
         &mut self,
         element: BlockElement,
-        body: &mut Vec<tacky::TackyInstruction>,
+        body: &mut Vec<TackyInstruction>,
     ) {
         match element {
             BlockElement::Stmt(stmt) => {
@@ -81,8 +117,8 @@ impl TackyParser {
 
     pub(crate) fn convert_block(
         &mut self,
-        block: ast::ast::Block,
-        body: &mut Vec<tacky::TackyInstruction>,
+        block: Block,
+        body: &mut Vec<TackyInstruction>,
     ) {
         for element in block.elements {
             self.convert_block_element(element, body);
@@ -92,10 +128,14 @@ impl TackyParser {
     pub(crate) fn convert_declaration(
         &mut self,
         decl: Declaration,
-        body: &mut Vec<tacky::TackyInstruction>,
+        body: &mut Vec<TackyInstruction>,
     ) {
         match decl {
             Declaration::DefineVar(var) => {
+                if var.storage_class == Some(StorageClass::Static) 
+                    || var.storage_class == Some(StorageClass::Extern) {
+                    return;
+                }
                 if let Some(init_expr) = var.init {
                     let val = self.convert_expr(init_expr, body);
                     InstructionBuilder::new(body).copy(val, Val::Var(var.name));

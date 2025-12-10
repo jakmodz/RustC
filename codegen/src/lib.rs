@@ -17,26 +17,23 @@ mod tests {
 
     #[test]
     fn test_asm_gen() -> std::io::Result<()> {
-        let source = String::from(
-            "int main(void) {
-                /* A local variable with no linkage */
-                int x = 3;
-                {
-                    /* Because no other x identifier
-                     * with any linkage has been declared,
-                     * the 'extern' keyword gives this external
-                     * linkage.
-                     */
-                    extern int x;
-                }
-                return x;
+        let source = String::from("
+            /* A variable with internal linkage may be tentatively defined
+             * and declared multiple times, but defined only once
+             */
+            
+            /* A tentative definition */
+            static int foo;
+            
+            int main(void) {
+                return foo;
             }
             
-            /* This has internal linkage, so it conflicts
-             * with the previous declaration of x.
-             */
-            static int x = 10;
-
+            /* A declaration */
+            extern int foo;
+            
+            /* A non-tentative definition */
+            static int foo = 4;
 ",
         );
         let mut lexer = lex::lexer::Lexer::new();
@@ -46,7 +43,7 @@ mod tests {
         let mut analyzer = SemanticAnalyzer::new();
         analyzer.analyze(&mut ast).unwrap();
         let tacky_program: tacky::tacky::Program =
-            TackyParser::new(analyzer.var_count).emit_tacky(ast);
+            TackyParser::new(analyzer.var_count).emit_tacky(ast,&analyzer);
 
         let asm_with_pseudos = AsmParser::new().parse(tacky_program);
 

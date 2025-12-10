@@ -1,13 +1,13 @@
 use crate::convert_expr::*;
 use crate::instruction_builder::InstructionBuilder;
-use crate::tacky;
-use crate::tacky::{BinaryOp, TackyInstruction, Val};
+use crate::tacky::{BinaryOp,Val};
+use crate::tacky_instruction::TackyInstruction;
 use crate::tacky_parser::TackyParser;
 use ast::ast::{Annotation, BlockElement, ForInit, SwitchCase};
 use ast::{Expression, Stmt};
 
 pub trait StatementConverter {
-    fn convert_stmt(&mut self, stmt: Stmt, instructions: &mut Vec<tacky::TackyInstruction>);
+    fn convert_stmt(&mut self, stmt: Stmt, instructions: &mut Vec<TackyInstruction>);
     fn convert_stmt_with_case_labels(
         &mut self,
         stmt: Stmt,
@@ -57,7 +57,7 @@ pub trait StatementConverter {
 }
 
 impl StatementConverter for TackyParser {
-    fn convert_stmt(&mut self, stmt: Stmt, instructions: &mut Vec<tacky::TackyInstruction>) {
+    fn convert_stmt(&mut self, stmt: Stmt, instructions: &mut Vec<TackyInstruction>) {
         match stmt {
             Stmt::Return { expr } => {
                 let val = self.convert_expr(expr, instructions);

@@ -56,8 +56,6 @@ impl GotoAnalyze for SemanticAnalyzer {
                 if let Some(else_branch) = else_branch {
                     self.resolve_label(else_branch, iter)?;
                 }
-                Ok(())
-                
             }
             Stmt::Label(label) => {
                 if self.labels.contains(label) {
@@ -77,10 +75,19 @@ impl GotoAnalyze for SemanticAnalyzer {
                     });
                 }
                 self.labels.insert(label.to_string());
-                Ok(())
             }
-            _ => Ok(()),
+            Stmt::While { condition, body, annotation } => todo!(),
+            Stmt::DoWhile { body, condition, annotation } => todo!(),
+            Stmt::For { init, condition, increment, body, annotation } => todo!(),
+            Stmt::Compound { block } => todo!(),
+            Stmt::Switch { expr, body, annotation, cases, default_label } => todo!(),
+            Stmt::Case { value, body } => {},
+            Stmt::Default { body } => {
+                self.resolve_goto(body)?;
+            },
+            _=>{}
         }
+        Ok(())
     }
     fn resolve_goto(&self, stmt: &Stmt) -> Result<Stmt, SemanticError> {
         match stmt {

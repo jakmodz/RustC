@@ -1,7 +1,8 @@
 use crate::asm_ast::*;
 use lazy_static::lazy_static;
-use tacky::tacky::{BinaryOp, Val};
-use tacky::tacky::{TackyInstruction, UnaryOp};
+use tacky::tacky::{BinaryOp, TackyFunction, Val};
+use tacky::tacky::{UnaryOp};
+use tacky::tacky_instruction::TackyInstruction;
 
 lazy_static! {
     pub static ref REGISTER_FOR_CALLING: [Register; 6] = [
@@ -22,38 +23,54 @@ impl AsmParser {
     }
 
     pub fn parse(&mut self, program: tacky::tacky::Program) -> AsmProgram {
-        let mut functions = Vec::new();
+        let mut constructs = Vec::new();
 
-        for func in program.functions.iter() {
-            let mut instructions = Vec::new();
+        for cons in program.constructs.iter() {
+            match cons {
+                tacky::tacky::TopLevelConstruct::Function(tacky_function) => {
+                  let func =  self.convert_function(tacky_function);
+                  constructs.push(AsmConstruct::Func(func));
+                },
+                tacky::tacky::TopLevelConstruct::StaticVar(static_var) => {
+                    constructs.push(AsmConstruct::StaticVar(AsmStaticVar{
+                        name:static_var.name.clone(),
+                        global:static_var.global,
+                        init:static_var.init
+                    }));
+                },
+            }
+            
 
-            for (i, param) in func.params.iter().enumerate() {
-                if i < 6 {
-                    let reg = REGISTER_FOR_CALLING[i].clone();
-                    instructions.push(Instruction::Mov {
-                        src: Operand::Reg(reg),
-                        dst: self.convert_val(param.clone()),
-                    });
-                } else {
-                    let stack_offset = 16 + ((i - 6) * 8) as i64;
-                    instructions.push(Instruction::Mov {
-                        src: Operand::Stack(stack_offset),
-                        dst: self.convert_val(param.clone()),
-                    });
-                }
-            }
-            for ins in func.body.iter() {
-                self.convert_instruction(ins.clone(), &mut instructions);
-            }
-            functions.push(AsmFunction {
-                name: func.name.clone(),
-                instructions,
-            });
         }
 
-        AsmProgram { functions }
+        AsmProgram { constructs}
     }
-
+    fn convert_function(&mut self,func: &TackyFunction) -> AsmFunction{
+        let mut instructions= Vec::new();
+        for (i, param) in func.params.iter().enumerate() {
+            if i < 6 {
+                let reg = REGISTER_FOR_CALLING[i].clone();
+                instructions.push(Instruction::Mov {
+                    src: Operand::Reg(reg),
+                    dst: self.convert_val(param.clone()),
+                });
+            } else {
+                let stack_offset = 16 + ((i - 6) * 8) as i64;
+                instructions.push(Instruction::Mov {
+                    src: Operand::Stack(stack_offset),
+                    dst: self.convert_val(param.clone()),
+                });
+            }
+        }
+        for ins in func.body.iter() {
+            self.convert_instruction(ins.clone(), &mut instructions);
+        }
+        AsmFunction {
+            name: func.name.clone(),
+            instructions,
+            global: func.global
+        }
+    }
     fn convert_instruction(&mut self, ins: TackyInstruction, instructions: &mut Vec<Instruction>) {
         match ins {
             TackyInstruction::Return(val) => {
@@ -189,7 +206,9 @@ impl AsmParser {
             TackyInstruction::FnCall { fn_name, args, dst } => {
                 let reg_args_count = args.len().min(6);
                 let stack_args_count = if args.len() > 6 { args.len() - 6 } else { 0 };
-                let stack_padding = if stack_args_count % 2 == 1 { 8 } else { 0 };
+                
+                let stack_padding = if stack_args_count % 2 == 0 { 0 } else { 8 };
+                
                 if stack_padding != 0 {
                     instructions.push(Instruction::Allocate {
                         size: stack_padding,

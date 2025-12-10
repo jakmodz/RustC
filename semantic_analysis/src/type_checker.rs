@@ -1,9 +1,13 @@
 use ast::{
     Declaration, Expression, Stmt, VarType,
-    ast::{Block, BlockElement, ForInit, FuncDecl, Program, VariableDecl}, decl::StorageClass,
+    ast::{Block, BlockElement, ForInit, FuncDecl, Program, VariableDecl},
+    decl::StorageClass,
 };
 
-use crate::{SemanticAnalyzer, SemanticError, symbol_entry::{IdentifierAttr, InitialValue, SymbolEntry}};
+use crate::{
+    SemanticAnalyzer, SemanticError,
+    symbol_entry::{IdentifierAttr, InitialValue, SymbolEntry},
+};
 
 pub trait TypeChecker {
     fn type_checking(&mut self, ast: &Program) -> Result<(), SemanticError>;
@@ -20,15 +24,15 @@ pub trait TypeChecker {
 
 impl TypeChecker for SemanticAnalyzer {
     fn type_checking(&mut self, ast: &Program) -> Result<(), SemanticError> {
-        for declaration in ast.declarations.iter(){
+        for declaration in ast.declarations.iter() {
             match declaration {
                 Declaration::DefineVar(variable_decl) => {
                     self.check_types_file_var_decl(variable_decl)?;
-                },
+                }
                 Declaration::FuncDecl { decl } => {
                     self.check_types_func_decl(decl)?;
                     self.check_func_body(decl)?;
-                },
+                }
             }
         }
         Ok(())
@@ -40,7 +44,7 @@ impl TypeChecker for SemanticAnalyzer {
                     var_name: decl.name.clone(),
                 });
             }
-            
+
             if let Some(old) = self.symbol_table.get(&decl.name) {
                 if old.get_var_type() != VarType::Int {
                     return Err(SemanticError::FunctionAsVariableName {
@@ -78,7 +82,7 @@ impl TypeChecker for SemanticAnalyzer {
                     _ => {}
                 }
             }
-            
+
             let initial_val = if let Some(Expression::Constant(val)) = &decl.init {
                 InitialValue::Initial(*val)
             } else if decl.init.is_none() {
@@ -88,7 +92,7 @@ impl TypeChecker for SemanticAnalyzer {
                     var_name: decl.name.clone(),
                 });
             };
-            
+
             self.symbol_table.insert(
                 decl.name.clone(),
                 SymbolEntry::Variable {
@@ -118,7 +122,7 @@ impl TypeChecker for SemanticAnalyzer {
                     _ => {}
                 }
             }
-            
+
             self.symbol_table.insert(
                 decl.name.clone(),
                 SymbolEntry::Variable {
@@ -126,16 +130,16 @@ impl TypeChecker for SemanticAnalyzer {
                     attr: IdentifierAttr::LocalAttr,
                 },
             );
-            
+
             if let Some(init) = &decl.init {
                 self.check_types_expr(init)?;
             }
         }
-        
+
         Ok(())
     }
-    
-    fn check_types_file_var_decl(&mut self, decl: &VariableDecl) -> Result<(), SemanticError>{
+
+    fn check_types_file_var_decl(&mut self, decl: &VariableDecl) -> Result<(), SemanticError> {
         let mut initial_val = if let Some(Expression::Constant(val)) = &decl.init {
             InitialValue::Initial(*val)
         } else if decl.init.is_none() {
@@ -145,22 +149,22 @@ impl TypeChecker for SemanticAnalyzer {
                 InitialValue::Tentative
             }
         } else {
-            return Err(SemanticError::NonConstStaticInitializer { 
-                var_name: decl.name.clone() 
+            return Err(SemanticError::NonConstStaticInitializer {
+                var_name: decl.name.clone(),
             });
         };
-        
+
         let mut global = decl.storage_class != Some(StorageClass::Static);
-        
+
         if self.symbol_table.contains_key(&decl.name) {
             let old = self.symbol_table.get(&decl.name).unwrap().clone();
-            
+
             if old.get_var_type() != VarType::Int {
                 return Err(SemanticError::FunctionAsVariableName {
                     func_name: decl.name.clone(),
                 });
             }
-            
+
             if decl.storage_class == Some(StorageClass::Extern) {
                 global = old.get_attr().is_global();
             } else {
@@ -190,21 +194,21 @@ impl TypeChecker for SemanticAnalyzer {
                 }
             }
         }
-        
+
         self.symbol_table.insert(
             decl.name.clone(),
             SymbolEntry::Variable {
                 var_type: VarType::Int,
-                attr: IdentifierAttr::StaticAttr { 
-                    init_val: initial_val, 
-                    global 
-                }
+                attr: IdentifierAttr::StaticAttr {
+                    init_val: initial_val,
+                    global,
+                },
             },
         );
-        
+
         Ok(())
     }
-    
+
     fn check_types_func_decl(&mut self, decl: &FuncDecl) -> Result<(), SemanticError> {
         if decl.storage_class == Some(StorageClass::Static) {
             if let Some(old) = self.symbol_table.get(&decl.name) {
@@ -217,13 +221,10 @@ impl TypeChecker for SemanticAnalyzer {
                 }
             }
         }
-        
+
         self.register_func_decl(decl)
     }
-    
-    
 
-    
     fn check_types_expr(&mut self, expr: &Expression) -> Result<(), SemanticError> {
         match expr {
             Expression::FunctionCall { func_name, args } => {
@@ -315,12 +316,13 @@ impl TypeChecker for SemanticAnalyzer {
         let has_body = decl.body.is_some();
         let mut aleready_defined = false;
         let mut global = decl.storage_class != Some(ast::decl::StorageClass::Static);
-        
+
         if self.symbol_table.contains_key(&decl.name) {
             let old_entry = self.symbol_table.get(&decl.name).unwrap();
             match old_entry {
                 SymbolEntry::Function {
-                    var_type: old_type,attr
+                    var_type: old_type,
+                    attr,
                 } => {
                     aleready_defined = attr.get_defined();
                     let params = old_type.get_param_count();
@@ -338,18 +340,16 @@ impl TypeChecker for SemanticAnalyzer {
                             func_name: decl.name.clone(),
                         });
                     }
-                    
+
                     let old_global = attr.is_global();
                     if decl.storage_class == Some(ast::decl::StorageClass::Static) {
-                      
                         if old_global {
-                            
                             return Err(SemanticError::ConflictingFunctionLinkage {
                                 func_name: decl.name.clone(),
                             });
                         }
                     }
-                    
+
                     global = old_global;
                 }
                 SymbolEntry::Variable { .. } => {
@@ -362,12 +362,12 @@ impl TypeChecker for SemanticAnalyzer {
         self.symbol_table.insert(
             decl.name.clone(),
             SymbolEntry::Function {
-            var_type: fun_type,
-            attr: IdentifierAttr::FunAttr { 
-                defined:aleready_defined || has_body,
-                global 
-            }
-        },
+                var_type: fun_type,
+                attr: IdentifierAttr::FunAttr {
+                    defined: aleready_defined || has_body,
+                    global,
+                },
+            },
         );
         Ok(())
     }
@@ -383,7 +383,7 @@ impl TypeChecker for SemanticAnalyzer {
                     param.clone(),
                     SymbolEntry::Variable {
                         var_type: VarType::Int,
-                        attr: IdentifierAttr::LocalAttr
+                        attr: IdentifierAttr::LocalAttr,
                     },
                 );
             }
@@ -398,7 +398,10 @@ impl TypeChecker for SemanticAnalyzer {
                     SymbolEntry::Function { .. } => {
                         global_scope.insert(name.clone(), entry.clone());
                     }
-                    SymbolEntry::Variable { attr: IdentifierAttr::StaticAttr { global: true, .. }, .. } => {
+                    SymbolEntry::Variable {
+                        attr: IdentifierAttr::StaticAttr {  .. },
+                        ..
+                    } => {
                         global_scope.insert(name.clone(), entry.clone());
                     }
                     _ => {}
@@ -427,7 +430,7 @@ impl TypeChecker for SemanticAnalyzer {
                             });
                         }
                         if decl.storage_class == Some(StorageClass::Static) {
-                            return Err(SemanticError::ConflictingFunctionLinkage { 
+                            return Err(SemanticError::ConflictingFunctionLinkage {
                                 func_name: decl.name.clone(),
                             });
                         }
@@ -445,7 +448,10 @@ impl TypeChecker for SemanticAnalyzer {
                 SymbolEntry::Function { .. } => {
                     outer_scope.insert(name.clone(), entry.clone());
                 }
-                SymbolEntry::Variable { attr: IdentifierAttr::StaticAttr { global: true, .. }, .. } => {
+                SymbolEntry::Variable {
+                    attr: IdentifierAttr::StaticAttr { .. },
+                    ..
+                } => {
                     outer_scope.insert(name.clone(), entry.clone());
                 }
                 _ => {}
@@ -494,7 +500,9 @@ impl TypeChecker for SemanticAnalyzer {
 
                 match init {
                     ForInit::Declaration(variable_decl) => {
-                        if variable_decl.storage_class == Some(StorageClass::Static) || variable_decl.storage_class == Some(StorageClass::Extern) {
+                        if variable_decl.storage_class == Some(StorageClass::Static)
+                            || variable_decl.storage_class == Some(StorageClass::Extern)
+                        {
                             return Err(SemanticError::InvalidStorageClassInForInit {
                                 var_name: variable_decl.name.clone(),
                             });

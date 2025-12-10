@@ -2,12 +2,24 @@ use tacky::tacky::{BinaryOp, UnaryOp};
 
 #[derive(Debug)]
 pub struct AsmProgram {
-    pub functions: Vec<AsmFunction>,
+    pub constructs: Vec<AsmConstruct>,
+}
+#[derive(Debug, Clone, PartialEq)]
+pub enum AsmConstruct{
+    Func(AsmFunction),
+    StaticVar(AsmStaticVar)
 }
 #[derive(Debug, Clone, PartialEq)]
 pub struct AsmFunction {
     pub name: String,
     pub instructions: Vec<Instruction>,
+    pub global:bool
+}
+#[derive(Debug, Clone, PartialEq)]
+pub struct  AsmStaticVar{
+    pub name:String,
+    pub global:bool,
+    pub init:i64
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -68,6 +80,7 @@ pub enum Operand {
     Reg(Register),
     Pseudo(String),
     Stack(i64),
+    Data(String)
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -111,9 +124,6 @@ pub(crate) fn convert_unary_op(op: UnaryOp) -> UnaryOpcode {
     match op {
         UnaryOp::Complement => UnaryOpcode::Not,
         UnaryOp::Negate => UnaryOpcode::Neg,
-        // UnaryOpcode::Not=>{
-        //     todo!()
-        // }
         _ => {
             todo!()
         }

@@ -10,23 +10,18 @@ impl AsmGenerator {
         Self { stack_offset: 0 }
     }
 
-    fn validate_operands(&self, src: &Operand, dst: &Operand) -> bool {
-        !matches!(
-            (src, dst),
-            (Operand::Imn(_), Operand::Imn(_))
-                | (Operand::Stack(_), Operand::Stack(_))
-                | (Operand::Reg(_), Operand::Imn(_))
-        )
-    }
-
     pub fn write(&mut self, program: AsmProgram, mut outputs: Vec<Box<dyn Write>>) -> Result<()> {
         for out in outputs.iter_mut() {
-            if cfg!(target_os = "macos") {
-                writeln!(out, "\t.section\t__TEXT,__text,regular,pure_instructions")?;
-            }
-            for function in &program.functions {
-                self.stack_offset = 0;
-                self.write_function(out, function)?;
+            for construct in &program.constructs {
+                match construct {
+                    AsmConstruct::Func(function) => {
+                        self.stack_offset = 0;
+                        self.write_function(out, function)?;
+                    },
+                    AsmConstruct::StaticVar(static_var) => {
+                        self.write_static_var(out, static_var)?;
+                    }
+                }
             }
             if cfg!(target_os = "linux") {
                 writeln!(out, "\t.section\t.note.GNU-stack,\"\",@progbits")?;
@@ -35,13 +30,46 @@ impl AsmGenerator {
         Ok(())
     }
 
+    fn write_static_var(&mut self, out: &mut dyn Write, static_var: &AsmStaticVar) -> Result<()> {
+        let name = if static_var.global && cfg!(target_os = "macos") {
+            format!("_{}", static_var.name)
+        } else if !static_var.global {
+            format!("L_{}", static_var.name) 
+        }
+        else {
+            static_var.name.clone()
+        };
+        
+        if static_var.global {
+            writeln!(out, "\t.globl {}", name)?;
+        }
+        
+        if !static_var.global && cfg!(target_os = "linux") {
+            writeln!(out, "\t.local {}", name)?; 
+        }
+
+        if static_var.init == 0 {
+            writeln!(out, "\t.bss")?;
+        }else{
+             writeln!(out, "\t.data")?;
+        }
+       writeln!(out, "\t.balign 4")?;
+        writeln!(out, "{}:", name)?; 
+        writeln!(out, "\t.long {}", static_var.init)?; 
+
+        Ok(())
+    }
+
     fn write_function(&mut self, out: &mut dyn Write, function: &AsmFunction) -> Result<()> {
         let mut fn_name = function.name.clone();
         if cfg!(target_os = "macos") {
             fn_name = format!("_{}", fn_name);
         }
-
-        writeln!(out, "\t.globl {}\n{}:", fn_name, fn_name)?;
+        writeln!(out,"\t.text")?; 
+        if function.global {
+            writeln!(out,"\t.globl {}", fn_name)?; 
+        } 
+        writeln!(out, "{}:", fn_name)?;
         writeln!(out, "\tpushq\t%rbp\n\tmovq\t%rsp, %rbp")?;
 
         for instr in &function.instructions {
@@ -116,21 +144,12 @@ impl AsmGenerator {
     }
 
     fn write_mov(&mut self, out: &mut dyn Write, src: &Operand, dst: &Operand) -> Result<()> {
-        if self.validate_operands(src, dst) {
-            writeln!(
-                out,
-                "\tmovl\t{}, {}",
-                self.operand_str(src),
-                self.operand_str(dst)
-            )
-        } else {
-            writeln!(
-                out,
-                "\tmovl\t{}, %r10d\n\tmovl\t%r10d, {}",
-                self.operand_str(src),
-                self.operand_str(dst)
-            )
-        }
+        writeln!(
+            out,
+            "\tmovl\t{}, {}",
+            self.operand_str(src),
+            self.operand_str(dst)
+        )
     }
 
     fn write_binary(
@@ -145,8 +164,7 @@ impl AsmGenerator {
             BinaryOpcode::Shl => self.write_shift(out, "shll", operand1, operand2),
             BinaryOpcode::Shr => self.write_shift(out, "sarl", operand1, operand2),
             _ => {
-                let src = self.move_to_register_if_necessary(out, operand1, operand2)?;
-                let opr_1 = self.operand_str(&src);
+                let opr_1 = self.operand_str(operand1);
                 let opr_2 = self.operand_str(operand2);
                 writeln!(out, "\t{} {}, {}", self.binary_opcode(op), opr_1, opr_2)
             }
@@ -154,19 +172,18 @@ impl AsmGenerator {
     }
 
     fn write_mul(&mut self, out: &mut dyn Write, src: &Operand, dst: &Operand) -> Result<()> {
-        let src_op = self.move_to_register_if_necessary(out, src, dst)?;
         match dst {
-            Operand::Stack(_) => writeln!(
+            Operand::Stack(_) | Operand::Data(_) => writeln!(
                 out,
                 "\tmovl\t{}, %r11d\n\timull\t{}, %r11d\n\tmovl\t%r11d, {}",
                 self.operand_str(dst),
-                self.operand_str(&src_op),
+                self.operand_str(src),
                 self.operand_str(dst)
             ),
             _ => writeln!(
                 out,
                 "\timull\t{}, {}",
-                self.operand_str(&src_op),
+                self.operand_str(src),
                 self.operand_str(dst)
             ),
         }
@@ -203,24 +220,12 @@ impl AsmGenerator {
         operand1: &Operand,
         operand2: &Operand,
     ) -> Result<()> {
-        match (operand1, operand2) {
-            (Operand::Imn(_), Operand::Imn(_)) | (Operand::Stack(_), Operand::Stack(_)) => {
-                self.write_mov(out, operand2, &Operand::Reg(Register::R10))?;
-                writeln!(out, "\tcmpl\t{}, %r10d", self.operand_str(operand1))
-            }
-            (Operand::Stack(_), Operand::Reg(_)) | (Operand::Imn(_), _) | (Operand::Reg(_), _) => {
-                writeln!(
-                    out,
-                    "\tcmpl\t{}, {}",
-                    self.operand_str(operand1),
-                    self.operand_str(operand2)
-                )
-            }
-            _ => {
-                self.write_mov(out, operand2, &Operand::Reg(Register::R10))?;
-                writeln!(out, "\tcmpl\t{}, %r10d", self.operand_str(operand1))
-            }
-        }
+        writeln!(
+            out,
+            "\tcmpl\t{}, {}",
+            self.operand_str(operand1),
+            self.operand_str(operand2)
+        )
     }
 
     fn write_setcc(
@@ -246,20 +251,6 @@ impl AsmGenerator {
                 )?;
                 self.write_mov(out, &Operand::Reg(Register::R10), &operand)
             }
-        }
-    }
-
-    fn move_to_register_if_necessary(
-        &mut self,
-        out: &mut dyn Write,
-        src: &Operand,
-        dst: &Operand,
-    ) -> Result<Operand> {
-        if self.validate_operands(src, dst) {
-            Ok(src.clone())
-        } else {
-            writeln!(out, "\tmovl\t{}, %r10d", self.operand_str(src))?;
-            Ok(Operand::Reg(Register::R10))
         }
     }
 
@@ -291,6 +282,9 @@ impl AsmGenerator {
             Operand::Pseudo(_) => {
                 panic!("Pseudoregisters should have been replaced before code generation")
             }
+            Operand::Data(iden) =>{
+                format!("{}(%rip)",iden) 
+            },
         }
     }
     fn reg_str_64(&self, reg: &Register) -> String {

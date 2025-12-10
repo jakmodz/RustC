@@ -94,7 +94,7 @@ fn run() -> Result<(), CompilerError> {
         }
 
         let mut tacky_parser = tacky::tacky_parser::TackyParser::new(analyzer.var_count);
-        let tacky_program = tacky_parser.emit_tacky(ast);
+        let tacky_program = tacky_parser.emit_tacky(ast,&analyzer);
         if args.tacky {
             continue;
         }

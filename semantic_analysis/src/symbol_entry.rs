@@ -14,7 +14,7 @@ pub enum IdentifierAttr{
     LocalAttr
 }
 impl IdentifierAttr {
-    pub(crate) fn get_defined(&self)->bool{
+    pub fn get_defined(&self)->bool{
         match self {
             IdentifierAttr::FunAttr { defined, .. } => defined.clone(),
             _=>{
@@ -22,14 +22,14 @@ impl IdentifierAttr {
             }
         }
     }
-    pub(crate) fn is_global(&self)->bool{
+    pub fn is_global(&self)->bool{
         match self {
             IdentifierAttr::FunAttr { global, .. } => global.clone(),
             IdentifierAttr::StaticAttr { global, .. } => global.clone(),
             IdentifierAttr::LocalAttr => false,
         }
     }
-    pub(crate) fn get_initial_value(&self) -> &InitialValue {
+    pub fn get_initial_value(&self) -> &InitialValue {
            match self {
                IdentifierAttr::StaticAttr { init_val, .. } => init_val,
                _ => {
@@ -39,7 +39,7 @@ impl IdentifierAttr {
     }
 }
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) enum SymbolEntry {
+pub enum SymbolEntry {
     Variable {
         var_type: VarType,
         attr: IdentifierAttr
@@ -57,7 +57,7 @@ impl SymbolEntry {
             SymbolEntry::Function { var_type, .. } => var_type.clone(),
         }
     }
-    pub(crate) fn get_attr(&self) -> IdentifierAttr {
+    pub fn get_attr(&self) -> IdentifierAttr {
         match self {
             SymbolEntry::Variable { attr ,..} => attr.clone(),
             SymbolEntry::Function { attr, .. } => attr.clone(),

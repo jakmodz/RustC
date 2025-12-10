@@ -3,12 +3,14 @@ mod goto_analyze;
 mod map_entry;
 mod semantic_error;
 pub mod switch_analyze;
-mod symbol_entry;
+pub mod symbol_entry;
 mod type_checker;
 
 pub use analyze::SemanticAnalyzer;
 pub(crate) use goto_analyze::GotoAnalyze;
 pub use semantic_error::SemanticError;
+pub use symbol_entry::SymbolEntry;
+
 #[cfg(test)]
 mod tests {
     fn init(src: &str) -> Result<(), SemanticError> {

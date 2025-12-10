@@ -1,4 +1,4 @@
-use crate::tacky::{BinaryOp, TackyInstruction, UnaryOp, Val};
+use crate::{tacky::{BinaryOp,UnaryOp, Val}, tacky_instruction::TackyInstruction};
 
 pub struct InstructionBuilder<'a> {
     instructions: &'a mut Vec<TackyInstruction>,

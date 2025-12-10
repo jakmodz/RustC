@@ -19,7 +19,7 @@ use std::collections::{HashMap, HashSet};
 pub struct SemanticAnalyzer {
     pub(crate) variables: HashMap<String, VariableEntry>,
     pub(crate) labels: HashSet<String>,
-    pub(crate) symbol_table: HashMap<String, SymbolEntry>,
+    pub symbol_table: HashMap<String, SymbolEntry>,
     pub var_count: usize,
     pub(crate) loop_count: usize,
     pub(crate) switch_count: usize,
@@ -374,42 +374,49 @@ impl SemanticAnalyzer {
         &mut self,
         decl: &FuncDecl,
     ) -> Result<Declaration, SemanticError> {
+        let has_linkage = decl.storage_class != Some(StorageClass::Static);
+        
         if let Some(prev) = self.variables.get(&decl.name) {
-            if prev.from_current_block && !prev.has_linkage {
-                return Err(SemanticError::MultipleDeclaration {
-                    var_name: decl.name.clone(),
-                });
+            if prev.from_current_block {
+                // Check if previous entry is also a function
+                if matches!(prev.kind, SymbolKind::Fun) {
+                    // Both are functions - they can be redeclared
+                    // (function prototypes can be repeated)
+                    // No error - allow redeclaration
+                }
+                // If previous was a variable, allow function to shadow it (no error)
             }
         }
+        
         self.variables.insert(
             decl.name.clone(),
-            VariableEntry::new(decl.name.clone(), true, SymbolKind::Fun, true),
+            VariableEntry::new(decl.name.clone(), true, SymbolKind::Fun, has_linkage),
         );
         
         let mut inner_map = self.variables.clone();
-
+    
         for entry in inner_map.values_mut() {
             entry.from_current_block = false;
         }
-
+    
         let mut resolved_params = Vec::new();
         for param in decl.params.iter() {
             let unique = self.insert_variable(param, &mut inner_map,None)?;
             resolved_params.push(unique);
         }
-
+    
         let resolved_body = if let Some(body) = &decl.body {
             let saved_scope = std::mem::replace(&mut self.variables, inner_map);
-
+    
             let resolved_elements = self.resolve_block(&body.elements)?;
-
+    
             let _ = std::mem::replace(&mut self.variables, saved_scope);
-
+    
             Some(Block::new(resolved_elements))
         } else {
             None
         };
-
+    
         Ok(Declaration::FuncDecl {
             decl: FuncDecl {
                 name: decl.name.clone(),
@@ -419,6 +426,7 @@ impl SemanticAnalyzer {
             },
         })
     }
+
     fn get_resolved_function_name(&mut self, name: &String) -> Result<String, SemanticError> {
         Ok(name.clone())
     }
@@ -429,7 +437,6 @@ impl SemanticAnalyzer {
         storage_class: Option<StorageClass>
     ) -> Result<String, SemanticError> {
         let current_is_extern = storage_class == Some(StorageClass::Extern);
-        
             if let Some(prev_entry) = map.get(var) {
                 if prev_entry.from_current_block {
                     if !(prev_entry.has_linkage && current_is_extern) {
@@ -441,9 +448,10 @@ impl SemanticAnalyzer {
             }
         
         if current_is_extern {
+            let has_linkage = current_is_extern;
             map.insert(
                 var.clone(),
-                VariableEntry::new(var.clone(), true, SymbolKind::Var, true),
+                VariableEntry::new(var.clone(), true, SymbolKind::Var, has_linkage),
             );
             Ok(var.clone()) 
         } else {

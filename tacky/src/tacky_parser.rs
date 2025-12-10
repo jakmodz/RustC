@@ -31,23 +31,32 @@ impl TackyParser {
     }
 
     pub fn emit_tacky(&mut self, mut ast: Program) -> tacky::Program {
+        todo!();
         let mut functions = Vec::new();
-        for func in ast.functions.iter_mut() {
-            let mut body = Vec::new();
-            let mut params = Vec::new();
-            if let Some(func_body) = func.body.take() {
-                self.convert_block(func_body, &mut body);
-                for param in &func.params {
-                    params.push(Val::Var(param.clone()));
-                }
-
-                InstructionBuilder::new(&mut body).return_val(Constant(0));
-                functions.push(tacky::TackyFunction {
-                    name: func.name.clone(),
-                    params,
-                    body: body,
-                });
+        for declaration in ast.declarations.iter_mut() {
+            match declaration {
+                Declaration::DefineVar(variable_decl) => {
+                    
+                },
+                Declaration::FuncDecl { decl } =>{
+                    let mut body = Vec::new();
+                    let mut params = Vec::new();
+                    if let Some(func_body) = decl.body.take() {
+                        self.convert_block(func_body, &mut body);
+                        for param in &decl.params {
+                            params.push(Val::Var(param.clone()));
+                        }
+        
+                        InstructionBuilder::new(&mut body).return_val(Constant(0));
+                        functions.push(tacky::TackyFunction {
+                            name: decl.name.clone(),
+                            params,
+                            body: body,
+                        });
+                    }
+                },
             }
+            
         }
 
         tacky::Program {

@@ -1,6 +1,6 @@
 use crate::Span;
 use crate::error::LexerError;
-use crate::patters::*;
+use crate::patterns::*;
 use crate::token::{Token, TokenType};
 
 pub struct Lexer {

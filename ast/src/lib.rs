@@ -1,5 +1,5 @@
 pub mod ast;
-mod decl;
+pub mod decl;
 mod expr;
 mod parse_expr;
 mod parse_stmt;
@@ -7,16 +7,16 @@ pub mod parser;
 pub mod parser_error;
 mod stmt;
 mod var_type;
-
 pub use decl::Declaration;
 pub use expr::Expression;
 pub(crate) use parse_expr::ParseExpr;
 pub(crate) use parse_stmt::ParseStmt;
 pub use stmt::Stmt;
 pub use var_type::VarType;
+
 #[cfg(test)]
 mod tests {
-
+    use crate::Declaration;
     #[test]
     fn ast_parser_test() {
         let source = String::from(
@@ -29,7 +29,19 @@ mod tests {
         let mut parser = crate::parser::Parser::new(tokens);
         let ast = parser.parse().unwrap();
         println!("{:#?}", ast);
+
+        assert_eq!(ast.declarations.len(), 1);
+        
+        match &ast.declarations[0] {
+            Declaration::FuncDecl { decl } => {
+                assert_eq!(decl.name, "main");
+                assert!(decl.body.is_some());
+                assert_eq!(decl.storage_class, None);
+            }
+            _ => panic!("Expected function declaration"),
+        }
     }
+
     #[test]
     fn parser_test() {
         let source = String::from(
@@ -43,9 +55,21 @@ mod tests {
         let tokens = lexer.tokenize(source).unwrap();
         let mut parser = crate::parser::Parser::new(tokens);
         let ast = parser.parse().unwrap();
-        assert_eq!(ast.functions[0].name, String::from("main"));
-        assert_eq!(ast.functions[0].body.as_ref().unwrap().elements.len(), 3);
+        
+        assert_eq!(ast.declarations.len(), 1);
+        
+        match &ast.declarations[0] {
+            Declaration::FuncDecl { decl } => {
+                assert_eq!(decl.name, "main");
+                assert!(decl.body.is_some());
+                
+                let body = decl.body.as_ref().unwrap();
+                assert_eq!(body.elements.len(), 3);
+            }
+            _ => panic!("Expected function declaration"),
+        }
     }
+
     #[test]
     fn goto_label() {
         let source = String::from(
@@ -59,7 +83,16 @@ label1:
         let tokens = lexer.tokenize(source).unwrap();
         let mut parser = crate::parser::Parser::new(tokens);
         let ast = parser.parse().unwrap();
-        assert_eq!(ast.functions[0].name, String::from("main"));
-        assert_eq!(ast.functions[0].body.as_ref().unwrap().elements.len(), 3);
+        
+        match &ast.declarations[0] {
+            Declaration::FuncDecl { decl } => {
+                assert_eq!(decl.name, "main");
+                assert!(decl.body.is_some());
+                
+                let body = decl.body.as_ref().unwrap();
+                assert_eq!(body.elements.len(), 3);
+            }
+            _ => panic!("Expected function declaration"),
+        }
     }
 }

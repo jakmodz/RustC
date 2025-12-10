@@ -1,6 +1,6 @@
 pub mod error;
 pub mod lexer;
-mod patters;
+mod patterns;
 mod span;
 pub mod token;
 mod token_to_string;

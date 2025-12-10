@@ -19,19 +19,24 @@ pub trait GotoAnalyze {
 
 impl GotoAnalyze for SemanticAnalyzer {
     fn analyze_goto_statements(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
-        for func in ast.functions.iter_mut() {
-            if let Some(body) = &mut func.body {
-                let mut iter = body.elements.iter().peekable();
-                while let Some(element) = iter.next() {
-                    if let BlockElement::Stmt(stmt) = element {
-                        self.resolve_label(stmt, &mut iter)?;
+        for func in ast.declarations.iter_mut() {
+            match func {
+                ast::Declaration::FuncDecl { decl }=> {
+                    if let Some(body) = &mut decl.body {
+                        let mut iter = body.elements.iter().peekable();
+                        while let Some(element) = iter.next() {
+                            if let BlockElement::Stmt(stmt) = element {
+                                self.resolve_label(stmt, &mut iter)?;
+                            }
+                        }
+                        for element in body.elements.iter_mut() {
+                            if let BlockElement::Stmt(stmt) = element {
+                                self.resolve_goto(stmt)?;
+                            }
+                        }
                     }
                 }
-                for element in body.elements.iter_mut() {
-                    if let BlockElement::Stmt(stmt) = element {
-                        self.resolve_goto(stmt)?;
-                    }
-                }
+                _=>{}
             }
         }
         Ok(())
@@ -52,6 +57,7 @@ impl GotoAnalyze for SemanticAnalyzer {
                     self.resolve_label(else_branch, iter)?;
                 }
                 Ok(())
+                
             }
             Stmt::Label(label) => {
                 if self.labels.contains(label) {

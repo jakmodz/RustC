@@ -55,4 +55,18 @@ pub enum SemanticError {
     },
     #[error("Function '{func_name}' used as var name")]
     FunctionAsVariableName { func_name: String },
+    #[error("Static function '{func_name}' declaration follows non-static")]
+    StaticFunctionAfterNonStatic { func_name: String },
+    #[error("Non const initializer for static variable '{var_name}'")]
+    NonConstStaticInitializer { var_name: String },
+    #[error("Conflicting variable linkage for '{var_name}'")]
+    ConflictingVariableLinkage { var_name: String },
+    #[error("Conflicting file scope variable definitions for '{var_name}'")]
+    ConflictingFileVariableDefinitions { var_name: String },
+    #[error("Initializer on local extern variable declaration '{var_name}'")]
+    InitializerOnLocalExtern { var_name: String },
+    #[error("Conflicting function linkage for '{func_name}'")]
+    ConflictingFunctionLinkage { func_name: String },
+    #[error("Invalid storage class for variable in for loop initializer '{var_name}'")]
+    InvalidStorageClassInForInit { var_name: String },
 }

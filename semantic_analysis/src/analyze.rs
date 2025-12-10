@@ -11,6 +11,9 @@ use ast::Stmt;
 use ast::ast::BlockElement;
 use ast::ast::Program;
 use ast::ast::*;
+use ast::decl::StorageClass;
+
+
 use std::collections::{HashMap, HashSet};
 
 pub struct SemanticAnalyzer {
@@ -65,11 +68,16 @@ impl SemanticAnalyzer {
     }
 
     pub fn variable_resolution(&mut self, ast: &mut Program) -> Result<(), SemanticError> {
-        for func in ast.functions.iter_mut() {
-            let resolved = self.resolve_function_declaration(&func.clone())?;
-            if let Declaration::FuncDecl { decl: new_func } = resolved {
-                *func = new_func;
+        for func in ast.declarations.iter_mut() {
+            match func{
+                Declaration::DefineVar(variable_decl) => {
+                    self.resolve_file_scope_variable_declaration(variable_decl);
+                },
+                Declaration::FuncDecl { decl } => {
+                   *func = self.resolve_function_declaration(decl)?;
+                },
             }
+           
         }
         Ok(())
     }
@@ -77,8 +85,8 @@ impl SemanticAnalyzer {
         match decl {
             Declaration::DefineVar(var) => {
                 let mut self_variables = self.variables.clone();
-                let unique_name = self.insert_variable(&var.name, &mut self_variables)?;
-
+                let unique_name = self.insert_variable(&var.name, &mut self_variables
+                    ,var.storage_class.clone())?;
                 self.variables = self_variables;
                 let resolved_init = match var.init.as_ref() {
                     Some(expr) => Some(self.resolve_expression(&expr)?),
@@ -88,6 +96,7 @@ impl SemanticAnalyzer {
                 Ok(Declaration::DefineVar(VariableDecl {
                     name: unique_name,
                     init: resolved_init,
+                    storage_class: var.storage_class.clone(),
                 }))
             }
             Declaration::FuncDecl { decl: declaration } => {
@@ -349,6 +358,18 @@ impl SemanticAnalyzer {
             None => Ok(None),
         }
     }
+    fn resolve_file_scope_variable_declaration(
+        &mut self,
+        decl:&mut VariableDecl,
+    ){
+        self.variables.insert(decl.name.clone(), VariableEntry { 
+            name: decl.name.clone(), 
+            has_linkage:true, 
+            kind: SymbolKind::Var, 
+            from_current_block: true 
+        });
+       
+    }
     fn resolve_function_declaration(
         &mut self,
         decl: &FuncDecl,
@@ -364,7 +385,7 @@ impl SemanticAnalyzer {
             decl.name.clone(),
             VariableEntry::new(decl.name.clone(), true, SymbolKind::Fun, true),
         );
-
+        
         let mut inner_map = self.variables.clone();
 
         for entry in inner_map.values_mut() {
@@ -373,7 +394,7 @@ impl SemanticAnalyzer {
 
         let mut resolved_params = Vec::new();
         for param in decl.params.iter() {
-            let unique = self.insert_variable(param, &mut inner_map)?;
+            let unique = self.insert_variable(param, &mut inner_map,None)?;
             resolved_params.push(unique);
         }
 
@@ -394,6 +415,7 @@ impl SemanticAnalyzer {
                 name: decl.name.clone(),
                 params: resolved_params,
                 body: resolved_body,
+                storage_class: decl.storage_class.clone(),
             },
         })
     }
@@ -404,22 +426,35 @@ impl SemanticAnalyzer {
         &mut self,
         var: &String,
         map: &mut HashMap<String, VariableEntry>,
+        storage_class: Option<StorageClass>
     ) -> Result<String, SemanticError> {
-        if let Some(entry) = map.get(var) {
-            if entry.from_current_block {
-                return Err(SemanticError::MultipleDeclaration {
-                    var_name: var.clone(),
-                });
+        let current_is_extern = storage_class == Some(StorageClass::Extern);
+        
+            if let Some(prev_entry) = map.get(var) {
+                if prev_entry.from_current_block {
+                    if !(prev_entry.has_linkage && current_is_extern) {
+                        return Err(SemanticError::MultipleDeclaration {
+                            var_name: var.clone(),
+                        });
+                    }
+                }
             }
-        }
-
-        let unique_name = format!("{}.{}", var, self.var_count);
-        self.var_count += 1;
-
-        map.insert(
-            var.clone(),
-            VariableEntry::new(unique_name.clone(), true, SymbolKind::Var, false),
-        );
-        Ok(unique_name)
+        
+        if current_is_extern {
+            map.insert(
+                var.clone(),
+                VariableEntry::new(var.clone(), true, SymbolKind::Var, true),
+            );
+            Ok(var.clone()) 
+        } else {
+            let unique_name = format!("{}.{}", var, self.var_count);
+            self.var_count += 1;
+    
+            map.insert(
+                var.clone(),
+                VariableEntry::new(unique_name.clone(), true, SymbolKind::Var, false),
+            );
+            Ok(unique_name)
+            }
     }
 }

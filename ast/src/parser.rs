@@ -1,5 +1,6 @@
 use crate::ParseExpr;
 use crate::ParseStmt;
+use crate::decl::StorageClass;
 use crate::parser_error::ParserError;
 use crate::{Declaration, Expression, ast::*};
 use lex::token;
@@ -58,96 +59,91 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> Result<Program, ParserError> {
-        let mut functions = Vec::new();
+        let mut declarations = Vec::new();
 
         while self.pos < self.tokens.len() {
-            let func_decl = self.parse_function()?;
-            functions.push(func_decl);
+            let decl = self.parse_declaration()?;
+            declarations.push(decl);
         }
 
-        Ok(Program { functions })
-    }
-
-    fn parse_function(&mut self) -> Result<FuncDecl, ParserError> {
-        self.excepted_token(TokenType::Int)?;
-
-        let token = self.excepted_token(TokenType::Identifier)?;
-        let name = token.to_string();
-
-        self.excepted_token(TokenType::OpenParen)?;
-        let mut params = Vec::new();
-
-        if self.peek()?.get_token_type() != TokenType::CloseParen {
-            if self.peek()?.get_token_type() == TokenType::Void {
-                self.eat()?;
-            } else {
-                loop {
-                    self.excepted_token(TokenType::Int)?;
-                    let param_name_token = self.excepted_token(TokenType::Identifier)?;
-                    let param_name = param_name_token.to_string();
-                    params.push(param_name);
-
-                    if self.peek()?.get_token_type() == TokenType::Comma {
-                        self.eat()?;
-                    } else {
-                        break;
-                    }
-                }
-            }
-        }
-
-        self.excepted_token(TokenType::CloseParen)?;
-
-        let next_token = self.peek()?;
-        if next_token.get_token_type() == TokenType::Semicolon {
-            self.eat()?;
-            Ok(FuncDecl {
-                name,
-                params,
-                body: None,
-            })
-        } else if next_token.get_token_type() == TokenType::OpenBrace {
-            self.eat()?;
-            let mut function_body = Vec::new();
-
-            while self.peek()?.get_token_type() != TokenType::CloseBrace {
-                let block_item = self.parse_block_element()?;
-                function_body.push(block_item);
-            }
-
-            self.excepted_token(TokenType::CloseBrace)?;
-
-            Ok(FuncDecl {
-                name,
-                params,
-                body: Some(Block::new(function_body)),
-            })
-        } else {
-            return Err(ParserError::ExpectedToken(
-                next_token.span().line,
-                next_token.span().column,
-                "OpenBrace or Semicolon".to_string(),
-                format!("{:?}", next_token.get_token_type()),
-            ));
-        }
+        Ok(Program { declarations })
     }
 
     pub(crate) fn parse_block_element(&mut self) -> Result<BlockElement, ParserError> {
-        let next_token = self.peek()?;
-        match next_token.get_token_type() {
-            TokenType::Int => {
-                let decl = self.parse_declaration()?;
-                Ok(BlockElement::Declaration(decl))
-            }
-            _ => {
-                let stmt = self.parse_stmt()?;
-                Ok(BlockElement::Stmt(stmt))
+        if self.pos < self.tokens.len() {
+            let next_token = self.peek()?;
+            match next_token.get_token_type() {
+                TokenType::Int | TokenType::Static | TokenType::Extern => {
+                    let decl = self.parse_declaration()?;
+                    return Ok(BlockElement::Declaration(decl));
+                }
+                _ => {}
             }
         }
+        
+        let stmt = self.parse_stmt()?;
+        Ok(BlockElement::Stmt(stmt))
+    }
+
+    fn parse_type_and_storage_class(&mut self) -> Result<Option<StorageClass>, ParserError> {
+        let mut types = Vec::new();
+        let mut storage_classes = Vec::new();
+
+        loop {
+            if self.pos >= self.tokens.len() {
+                break;
+            }
+            let next_token = self.peek()?;
+            match next_token.get_token_type() {
+                TokenType::Int => {
+                    self.eat()?;
+                    types.push(TokenType::Int);
+                }
+                TokenType::Static => {
+                    self.eat()?;
+                    storage_classes.push(StorageClass::Static);
+                }
+                TokenType::Extern => {
+                    self.eat()?;
+                    storage_classes.push(StorageClass::Extern);
+                }
+                _ => break,
+            }
+        }
+
+        if types.len() != 1 {
+            if self.pos >= self.tokens.len() {
+                return Err(ParserError::UnexpectedEOF);
+            }
+            let token = self.peek()?;
+            return Err(ParserError::UnexpectedToken(
+                token.span().line,
+                token.span().column,
+                "Expected exactly one type specifier".to_string(),
+            ));
+        }
+
+        if storage_classes.len() > 1 {
+            let token = self.peek()?;
+            return Err(ParserError::UnexpectedToken(
+                token.span().line,
+                token.span().column,
+                "Multiple storage-class specifiers".to_string(),
+            ));
+        }
+
+        let storage_class = if storage_classes.is_empty() {
+            None
+        } else {
+            Some(storage_classes[0].clone())
+        };
+
+        Ok(storage_class)
     }
 
     fn parse_declaration(&mut self) -> Result<Declaration, ParserError> {
-        self.excepted_token(TokenType::Int)?;
+        let storage_class = self.parse_type_and_storage_class()?;
+        
         let var_name_token = self.eat()?;
 
         if var_name_token.get_token_type() != TokenType::Identifier {
@@ -205,6 +201,7 @@ impl Parser {
                         name,
                         params,
                         body: Some(Block::new(function_body)),
+                        storage_class,
                     },
                 })
             } else {
@@ -215,6 +212,7 @@ impl Parser {
                         name,
                         params,
                         body: None,
+                        storage_class,
                     },
                 })
             }
@@ -233,21 +231,26 @@ impl Parser {
             Ok(Declaration::DefineVar(VariableDecl {
                 name,
                 init: initializer,
+                storage_class,
             }))
         }
     }
 
     pub(crate) fn parse_for_init(&mut self) -> Result<ForInit, ParserError> {
+        if self.pos >= self.tokens.len() {
+            return Err(ParserError::UnexpectedEOF);
+        }
+        
         let next_token = self.peek()?;
         match next_token.get_token_type() {
-            TokenType::Int => {
+            TokenType::Int | TokenType::Static | TokenType::Extern => {
                 let decl = self.parse_declaration()?;
                 match decl {
                     Declaration::DefineVar(var_decl) => Ok(ForInit::Declaration(var_decl)),
                     _ => Err(ParserError::UnexpectedToken(
                         next_token.span().line,
                         next_token.span().column,
-                        format!("{:?}", next_token.get_token_type()),
+                        "Function declaration not allowed in for loop init".to_string(),
                     )),
                 }
             }

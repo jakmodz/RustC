@@ -87,7 +87,6 @@ fn run() -> Result<(), CompilerError> {
         if args.parse {
             continue;
         }
-
         let mut analyzer = SemanticAnalyzer::new();
         analyzer.analyze(&mut ast)?;
         if args.validate {

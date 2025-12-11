@@ -19,28 +19,26 @@ mod tests {
     fn test_asm_gen() -> std::io::Result<()> {
         let source = String::from(
             "
-            /* A variable with internal linkage may be tentatively defined
-             * and declared multiple times, but defined only once
-             */
-            
-            /* A tentative definition */
-            static int foo;
+            // if we use goto to jump into the middle of a for loop,
+            // the initial expression isn't evaluated
             
             int main(void) {
-                return foo;
+                int i = 0;
+                goto target;
+                for (i = 5; i < 10; i = i + 1)
+                target:
+                    if (i == 0)
+                        return 1;
+                return 0;
             }
-            
-            /* A declaration */
-            extern int foo;
-            
-            /* A non-tentative definition */
-            static int foo = 4;
+
 ",
         );
         let mut lexer = lex::lexer::Lexer::new();
         let tokens = lexer.tokenize(source).unwrap();
         let mut parser = ast::parser::Parser::new(tokens);
         let mut ast = parser.parse().unwrap();
+        println!("{:?}",ast);
         let mut analyzer = SemanticAnalyzer::new();
         analyzer.analyze(&mut ast).unwrap();
         let tacky_program: tacky::tacky::Program =

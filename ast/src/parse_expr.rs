@@ -99,7 +99,7 @@ impl ParseExpr for Parser {
         let mut result = match next_token {
             Token::Constant(value, _span) => {
                 self.eat()?;
-                Expression::Constant(value)
+                Expression::Constant(value as i64)
             }
             Token::OpenParen(_) => {
                 self.eat()?;

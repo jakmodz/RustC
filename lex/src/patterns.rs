@@ -17,6 +17,7 @@ lazy_static! {
             (Regex::new(r"^goto\b").unwrap(), TokenType::Goto),
             (Regex::new(r"^else\b").unwrap(), TokenType::Else),
             (Regex::new(r"^case\b").unwrap(),TokenType::Case),
+            (Regex::new(r"^long\b").unwrap(),TokenType::Long),
             (Regex::new(r"^int\b").unwrap(), TokenType::Int),
 
             (Regex::new(r"^for\b").unwrap(), TokenType::For),
@@ -47,8 +48,9 @@ lazy_static! {
             (Regex::new(r"^[a-zA-Z_]\w*").unwrap(), TokenType::Identifier),
 
             // Numbers
+            (Regex::new(r"[0-9]+[lL]\b").unwrap(),TokenType::LongConstant),
             (Regex::new(r"^[0-9]+").unwrap(), TokenType::Constant),
-
+            
             // Punctuation and single-character operators
             (Regex::new(r"^\(").unwrap(), TokenType::OpenParen),
             (Regex::new(r"^\)").unwrap(), TokenType::CloseParen),

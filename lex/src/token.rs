@@ -1,7 +1,7 @@
-use crate::Span;
+use crate::{Span};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
-
+use crate::str_number_util::number_from;
 lazy_static! {
     static ref OPERATOR_PRECEDENCE: HashMap<TokenType, usize> = {
         let mut map = HashMap::new();
@@ -44,7 +44,9 @@ lazy_static! {
 pub enum TokenType {
     Identifier,
     Constant,
+    LongConstant,
     Int,
+    Long,
     Void,
     Goto,
     Return,
@@ -106,7 +108,8 @@ pub enum TokenType {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Token {
     Identifier(String, Span),
-    Constant(i64, Span),
+    Constant(i32, Span),
+    LongConstant(u64,Span),
 
     //
     OpenParen(Span),
@@ -157,6 +160,7 @@ pub enum Token {
     //types
     Int(Span),
     Void(Span),
+    Long(Span),
     If(Span),
     Else(Span),
     QuestionMark(Span),
@@ -238,6 +242,8 @@ impl Token {
             Token::Comma(_) => TokenType::Comma,
             Token::Static(_) => TokenType::Static,
             Token::Extern(_) => TokenType::Extern,
+            Token::Long(_)=>TokenType::Long,
+            Token::LongConstant(_,_)=>TokenType::LongConstant,
         }
     }
 
@@ -301,6 +307,8 @@ impl Token {
             | Token::Comma(span)
             | Token::Static(span)
             | Token::Extern(span)
+            | Token::Long(span)
+            | Token::LongConstant(_,span)
             | Token::Goto(span) => span,
         }
     }
@@ -363,13 +371,23 @@ impl Token {
             "," => Some(TokenType::Comma),
             "static" => Some(TokenType::Static),
             "extern" => Some(TokenType::Extern),
+            "long" =>Some(TokenType::Long),
             _ => None,
         }
     }
+    
     pub fn create_token(token_type: TokenType, s: &str, span: Span) -> Self {
         match token_type {
             TokenType::Identifier => Token::Identifier(s.to_string(), span),
-            TokenType::Constant => Token::Constant(s.parse::<i64>().unwrap(), span),
+            TokenType::Constant => {
+                match s.parse::<i32>() {
+                    Ok(val) => Token::Constant(val, span),
+                    Err(_) => {
+                        Token::LongConstant(s.parse::<u64>().unwrap(), span)
+                    }
+                }
+            },
+            TokenType::LongConstant=>Token::LongConstant(number_from::<u64>(s, ("l","L")).unwrap(),span),
             TokenType::Int => Token::Int(span),
             TokenType::Void => Token::Void(span),
             TokenType::Return => Token::Return(span),
@@ -427,6 +445,7 @@ impl Token {
             TokenType::Comma => Token::Comma(span),
             TokenType::Static => Token::Static(span),
             TokenType::Extern => Token::Extern(span),
+            TokenType::Long => Token::Long(span)
         }
     }
     pub fn is_binary_op(&self) -> bool {

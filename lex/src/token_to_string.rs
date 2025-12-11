@@ -1,5 +1,5 @@
 use crate::token::Token;
-use std::fmt;
+use std::fmt::{self};
 use std::fmt::Formatter;
 
 impl fmt::Display for Token {
@@ -7,6 +7,7 @@ impl fmt::Display for Token {
         match self {
             Token::Identifier(str, _) => write!(f, "{}", str),
             Token::Constant(i, _) => write!(f, "{}", i),
+            Token::LongConstant(i,_ )=>write!(f,"{}",i),
             Token::OpenParen(_) => write!(f, "("),
             Token::CloseParen(_) => write!(f, ")"),
             Token::OpenBrace(_) => write!(f, "{{"),
@@ -64,6 +65,7 @@ impl fmt::Display for Token {
             Token::Comma(_) => write!(f, ","),
             Token::Static(_) => write!(f, "static"),
             Token::Extern(_) => write!(f, "extern"),
+            Token::Long(_)=>write!(f, "long"),
         }
     }
 }

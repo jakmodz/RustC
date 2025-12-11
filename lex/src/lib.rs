@@ -4,7 +4,7 @@ mod patterns;
 mod span;
 pub mod token;
 mod token_to_string;
-
+mod str_number_util;
 use crate::span::Span;
 #[cfg(test)]
 mod tests {
